@@ -46,7 +46,7 @@
 
 ## 3. 阶段 A：先复现标准 SIM-CoT
 
-官方 GSM8K-Aug 约含 385k 条由 GPT-4 生成的结构化推理样本，数据字段为 `question`、`steps`、`answer`。官方 GPT-2 规模 Coconut+SIM-CoT 报告的准确率为：GSM8K-Aug 44.8%、GSM-Hard 12.2%、MultiArith 9.3%、SVAMP 90.8%。
+官方 GSM8K-Aug 约含 385k 条由 GPT-4 生成的结构化推理样本，数据字段为 `question`、`steps`、`answer`。官方 GPT-2 规模 Coconut+SIM-CoT 报告的准确率为：GSM8K-Aug 44.8%、GSM-Hard 9.3%、MultiArith 90.8%、SVAMP 40.7%；表中的 12.2 是平均生成 token 数，不是正确率。
 
 由于官方训练设置面向多卡，而本机只有 8 GB 显存，复现分成两个门槛，避免把“下载并评测官方权重”和“本地完整训练复现”混为一谈。
 

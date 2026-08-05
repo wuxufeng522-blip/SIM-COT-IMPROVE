@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "run_id": "R005",
+  "seed": 0,
+  "device": "cuda",
+  "official_source_dir": "work/vendor/SIM-CoT/Coconut",
+  "base_model_dir": "work/cache/simcot/gpt2_base",
+  "dataset_path": "work/cache/simcot/data/raw/train.txt",
+  "r004_metrics_path": "outputs/reliable_simcot/r004/metrics.json",
+  "source_checkpoint_path": "work/reliable_simcot/r004/checkpoint_smoke.pt",
+  "output_dir": "outputs/reliable_simcot/r005",
+  "work_dir": "work/reliable_simcot/r005",
+  "precision": "bf16",
+  "latent_stage": 5,
+  "c_thought": 2,
+  "longest_candidate_count": 256,
+  "gradient_accumulation_steps": 8,
+  "learning_rate": 0.0001,
+  "weight_decay": 0.01,
+  "max_grad_norm": 1.0,
+  "reload_tolerance": 0.0001,
+  "max_reserved_memory_gb": 7.4
+}
