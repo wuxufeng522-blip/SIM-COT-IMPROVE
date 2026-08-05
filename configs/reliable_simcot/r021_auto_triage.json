@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "run_id": "R021",
+  "parent_manifest_path": "outputs/reliable_simcot/r020_natural_audit/freeze_manifest.json",
+  "parent_rows_sha256": "114e8716ad8b2789fab39a0d71878a835a29a215f294c329c0b0fecda53458ef",
+  "output_dir": "outputs/reliable_simcot/r021_auto_triage"
+}

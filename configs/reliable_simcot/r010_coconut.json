@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "run_id": "R010",
+  "variant": "coconut",
+  "output_dir": "outputs/reliable_simcot/r010",
+  "work_dir": "work/reliable_simcot/r010"
+}

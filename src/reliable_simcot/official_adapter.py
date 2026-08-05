@@ -15,6 +15,30 @@ from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 SPECIAL_TOKENS = ("<|start-latent|>", "<|end-latent|>", "<|latent|>")
 
 
+def validate_checkpoint_compatibility(
+    missing_keys: list[str],
+    unexpected_keys: list[str],
+    *,
+    allow_missing_auxiliary: bool,
+) -> None:
+    if not allow_missing_auxiliary:
+        if missing_keys or unexpected_keys:
+            raise ValueError(
+                "Checkpoint key mismatch: "
+                f"missing={missing_keys}, unexpected={unexpected_keys}"
+            )
+        return
+    if unexpected_keys or any(
+        not key.startswith("expainable_llm.") for key in missing_keys
+    ):
+        raise ValueError(
+            "Partial checkpoint key mismatch: "
+            f"missing={missing_keys}, unexpected={unexpected_keys}"
+        )
+    if not missing_keys:
+        raise ValueError("Expected a base-only checkpoint with missing auxiliary weights")
+
+
 @dataclass(frozen=True)
 class OfficialExample:
     idx: int
@@ -28,9 +52,13 @@ def parse_icot_line(line: str, idx: int) -> OfficialExample:
     if "||" not in stripped or "##" not in stripped:
         raise ValueError(f"Malformed official data line {idx}")
     question, remainder = stripped.split("||", 1)
-    reasoning, answer = remainder.rsplit("##", 1)
+    # Match the released preprocessing/gsm_icot.py.  GSM8K source rows use
+    # ``####`` before the answer, so rsplit("##", 1) would incorrectly leave
+    # a synthetic ``##`` reasoning step behind.
+    fields = remainder.split("##")
+    reasoning, answer = fields[0], fields[-1]
     steps = tuple(reasoning.strip().split(" "))
-    if not question or not steps or not answer.strip() or any(not step for step in steps):
+    if not question or not steps or not answer.strip():
         raise ValueError(f"Empty field in official data line {idx}")
     return OfficialExample(
         idx=idx,
@@ -86,6 +114,7 @@ def load_official_model(
     device: torch.device,
     dtype: torch.dtype = torch.float32,
     move_auxiliary_to_device: bool = False,
+    allow_missing_auxiliary: bool = False,
 ):
     tokenizer, token_ids = build_tokenizer(base_model_dir)
     model_config = AutoConfig.from_pretrained(
@@ -126,9 +155,12 @@ def load_official_model(
         weights_only=True,
         mmap=True,
     )
-    incompatible = model.load_state_dict(state, strict=True)
-    if incompatible.missing_keys or incompatible.unexpected_keys:
-        raise ValueError(f"Checkpoint key mismatch: {incompatible}")
+    incompatible = model.load_state_dict(state, strict=not allow_missing_auxiliary)
+    validate_checkpoint_compatibility(
+        incompatible.missing_keys,
+        incompatible.unexpected_keys,
+        allow_missing_auxiliary=allow_missing_auxiliary,
+    )
     del state
 
     model.expainable_llm.to(

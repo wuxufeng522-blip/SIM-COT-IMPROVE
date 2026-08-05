@@ -4,17 +4,18 @@
 
 | Run ID | Milestone | Purpose | System / Variant | Split / Dataset | Metrics / Artifact | Priority | Status | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| R001 | M0 | 固定依赖和输入 | official repo/data/model/checkpoint | N/A | commit、revision、SHA-256、环境清单 | MUST | TODO | 首个运行；不训练 |
-| R002 | M0 | 核验核心官方数值 | official checkpoint | GSM8K-Aug test | accuracy、样本数、解析失败数 | MUST | TODO | 目标 44.8%±1.0 pp |
-| R003 | M0 | 完成官方四任务复现 | official checkpoint | GSM-Hard/MultiArith/SVAMP | accuracy | MUST | TODO | 目标 12.2/9.3/90.8，各 ±1.0 pp |
-| R004 | M0 | 最大样本 20-step 预检 | standard SIM-CoT | official train sample | loss、peak reserved、step 对齐 | MUST | TODO | ≤7.4 GB |
-| R005 | M0 | checkpoint 恢复验证 | standard SIM-CoT | smoke subset | reload 一致性、继续训练 loss、吞吐 | MUST | TODO | 为后续估时 |
-| R010 | M1 | 本地基础模型方向 | Coconut seed 0 | fixed short-budget train / 4 tests | macro accuracy、per-task accuracy | MUST | TODO | 与 R011 同预算 |
-| R011 | M1 | 本地 SIM-CoT 方向 | standard SIM-CoT seed 0 | same as R010 | macro accuracy、step NLL | MUST | TODO | 目标比 R010 +2.0 pp |
-| R012 | M1 | 公平性审计 | R010 vs R011 | logs/configs | updates、sampler、optimizer、batch parity | MUST | TODO | 不一致则比较作废 |
-| R020 | M2 | 无偏流行率抽样 | audit sampler | official train | ≥2,000 steps、split hash | MUST | TODO | 抽样前不筛异常 |
-| R021 | M2 | 自动结构检查 | rule audit | prevalence audit | coverage、invalid candidates | MUST | TODO | 不自动决定 Utility |
-| R022 | M2 | 人工复核 | human labels | prevalence audit | V/U 标签、分歧率、CI | MUST | TODO | 建议 10% 双标 |
+| R001 | M0 | 固定依赖和输入 | official repo/data/model/checkpoint | N/A | commit、revision、SHA-256、环境清单 | MUST | PASS | revision 与 SHA-256 已冻结 |
+| R002 | M0 | 核验核心官方数值 | official checkpoint | GSM8K-Aug test | accuracy、样本数、解析失败数 | MUST | PASS | 44.43%，目标 44.8%±1.0 pp |
+| R003 | M0 | 完成官方四任务复现 | official checkpoint | GSM-Hard/MultiArith/SVAMP | accuracy | MUST | PASS | 9.48% / 89.83% / 40.60%，均在 ±1.0 pp |
+| R004 | M0 | 最大样本 20-step 预检 | standard SIM-CoT | official train sample | loss、peak reserved、step 对齐 | MUST | FAIL | 旧 PASS 被 `####` 解析勘误降级；修正版 v2 第 15 步及重试加载阶段被系统无 traceback 终止 |
+| R005 | M0 | checkpoint 恢复验证 | standard SIM-CoT | smoke subset | reload 一致性、继续训练 loss、吞吐 | MUST | FAIL | 旧运行依赖错误步骤解析；修正版因 R004-v2 未完成而未启动 |
+| R009 | M1-pre | checkpoint-24 来源审计 | third-party Coconut checkpoint-24 | 4 tests | accuracy、revision、SHA-256 | MUST | FAIL | 官方未发布 checkpoint-24；第三方权重为 33.13/6.90/79.33/37.10，仅 SVAMP 在论文值 ±1 pp |
+| R010 | M1 | 本地基础模型方向 | Coconut seed 0 | fixed short-budget train / 4 tests | macro accuracy、per-task accuracy | MUST | BLOCKED | 无经验证的官方 checkpoint-24，且修正版 R004-v2 未通过；未启动 |
+| R011 | M1 | 本地 SIM-CoT 方向 | standard SIM-CoT seed 0 | same as R010 | macro accuracy、step NLL | MUST | BLOCKED | 与 R010 同步停止，避免不公平或不可归因比较 |
+| R012 | M1 | 公平性审计 | R010 vs R011 | logs/configs | updates、sampler、optimizer、batch parity | MUST | BLOCKED | 两分支未启动；v2 schedule 已冻结并排除 R020 审计题 |
+| R020 | M2 | 无偏流行率抽样 | audit sampler | official train | ≥2,000 steps、split hash | MUST | PASS | 800 个唯一问题簇、2,110 个真实步骤；抽样前未筛异常 |
+| R021 | M2 | 自动结构检查 | rule audit | prevalence audit | coverage、invalid candidates | MUST | PASS | 2,102 checked-match、5 mismatch candidates、2 manual、1 empty；仅作分流 |
+| R022 | M2 | 人工复核 | human labels | prevalence audit | V/U 标签、分歧率、CI | MUST | BLOCKED | 盲评模板、10%（211 行）双标和统计脚本已就绪，等待两位独立评审填写 |
 | R023 | M2 | 构建自然检测封存集 | matched audit builder | official train held-out | ≥100 low / ≥100 clean、hash | MUST | TODO | 尽量 50 invalid + 50 low-U |
 | R030 | M3 | 构建可靠性训练集 | five-family generator | question split 60/20/20 | family counts、leakage checks | MUST | TODO | 先切题再生成 |
 | R031 | M3 | LOFO 数值族 | V×U head | held-out numeric | V/U/composite AUC | MUST | TODO | 未见题目 |

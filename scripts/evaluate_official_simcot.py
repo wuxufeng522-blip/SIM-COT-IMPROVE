@@ -49,6 +49,7 @@ def main() -> None:
         checkpoint_path=_project_path(root, config["checkpoint_path"]),
         device=device,
         dtype=torch.float32,
+        allow_missing_auxiliary=config.get("allow_missing_auxiliary", False),
     )
     metrics = evaluate_checkpoint(
         model=model,

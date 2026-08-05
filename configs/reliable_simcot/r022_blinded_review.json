@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "run_id": "R022-PREP",
+  "parent_manifest_path": "outputs/reliable_simcot/r020_natural_audit/freeze_manifest.json",
+  "parent_rows_sha256": "114e8716ad8b2789fab39a0d71878a835a29a215f294c329c0b0fecda53458ef",
+  "assignment_seed": 20260806,
+  "overlap_fraction": 0.1,
+  "output_dir": "outputs/reliable_simcot/r022_blinded_review_v2"
+}

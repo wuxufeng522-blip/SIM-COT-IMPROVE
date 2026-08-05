@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "run_id": "M1-INIT",
+  "seed": 0,
+  "device": "cuda",
+  "official_source_dir": "work/vendor/SIM-CoT/Coconut",
+  "provenance_manifest": "outputs/reliable_simcot/r001/provenance.json",
+  "base_model_dir": "work/cache/simcot/gpt2_base",
+  "checkpoint_path": "work/cache/simcot/m1_init/coconut_checkpoint24/pytorch_model.bin",
+  "allow_missing_auxiliary": true,
+  "latent_tokens": 10,
+  "max_new_tokens": 64,
+  "flush_every": 25,
+  "summary_path": "outputs/reliable_simcot/m1_init_audit/ood_metrics.json",
+  "datasets": [
+    {
+      "name": "gsm-hard",
+      "paths": ["work/cache/simcot/data/ood/reasoning-machines_gsm-hard/gsmhardv2.jsonl"],
+      "source_repo": "reasoning-machines/gsm-hard",
+      "source_revision": "960448f73503112d4226baeb8eb41d3fb5ae2506",
+      "source_sha256": ["2032b0188a49ac0ec38cbe1e695e7d62d6dddc44bbb64f920728aca710e9ddef"],
+      "expected_examples": 1319,
+      "expected_accuracy": 0.081,
+      "accuracy_tolerance": 0.01,
+      "output_dir": "outputs/reliable_simcot/m1_init_audit/gsm-hard"
+    },
+    {
+      "name": "multi-arith",
+      "paths": [
+        "work/cache/simcot/data/ood/ChilleD_MultiArith/test.json",
+        "work/cache/simcot/data/ood/ChilleD_MultiArith/train.json"
+      ],
+      "source_repo": "ChilleD/MultiArith",
+      "source_revision": "144d44c3fb87c0b9097ac9593c789e716a282e3e",
+      "source_sha256": [
+        "c3a154a48f87e7c38b41f2ad9d878f4b274c843efdabb4ebc0b9958d61f5887c",
+        "36a88b1587623e6b8acfdd365722afd7bc2889b56d57a5b3db3ed50b4751fdca"
+      ],
+      "expected_examples": 600,
+      "expected_accuracy": 0.835,
+      "accuracy_tolerance": 0.01,
+      "output_dir": "outputs/reliable_simcot/m1_init_audit/multi-arith"
+    },
+    {
+      "name": "svamp",
+      "paths": [
+        "work/cache/simcot/data/ood/ChilleD_SVAMP/train.json",
+        "work/cache/simcot/data/ood/ChilleD_SVAMP/test.json"
+      ],
+      "source_repo": "ChilleD/SVAMP",
+      "source_revision": "5e0bf1e5e7c0e9c4bc39180d224f41f3f801b7ef",
+      "source_sha256": [
+        "bb3b4cd2957f07643bbf9f8f8f5faba3bfb47fcb1d9034655b03060a76675e2b",
+        "9b5590fce66ea78ecfc7d0fc4a91fb801ffe289340269f8d9d28b21acad04ae6"
+      ],
+      "expected_examples": 1000,
+      "expected_accuracy": 0.362,
+      "accuracy_tolerance": 0.01,
+      "output_dir": "outputs/reliable_simcot/m1_init_audit/svamp"
+    }
+  ]
+}

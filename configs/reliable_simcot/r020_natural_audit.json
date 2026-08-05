@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "run_id": "R020",
+  "dataset_path": "work/cache/simcot/data/raw/train.txt",
+  "dataset_sha256": "0a3909a9e7d8d2f7ad6b8c7b5608aa744988d835f9bf874d4cf06ca77df6bf8c",
+  "seed": 20260805,
+  "question_count": 800,
+  "minimum_step_count": 2000,
+  "output_dir": "outputs/reliable_simcot/r020_natural_audit"
+}

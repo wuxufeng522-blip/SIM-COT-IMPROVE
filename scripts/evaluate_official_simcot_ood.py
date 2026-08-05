@@ -191,6 +191,7 @@ def main() -> None:
         checkpoint_path=project_path(root, config["checkpoint_path"]),
         device=device,
         dtype=torch.float32,
+        allow_missing_auxiliary=config.get("allow_missing_auxiliary", False),
     )
     metrics = []
     for dataset_config in config["datasets"]:
@@ -210,7 +211,7 @@ def main() -> None:
             )
         )
     summary = {
-        "run_id": "R003",
+        "run_id": config.get("run_id", "R003"),
         "status": (
             "PASS"
             if all(metric["gate_passed"] is True for metric in metrics)
