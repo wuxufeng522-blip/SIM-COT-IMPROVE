@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "run_id": "R009-MPILLIGUA",
+  "seed": 0,
+  "device": "cuda",
+  "official_source_dir": "work/vendor/SIM-CoT/Coconut",
+  "provenance_manifest": "outputs/reliable_simcot/r001/provenance.json",
+  "base_model_dir": "work/cache/simcot/gpt2_base",
+  "checkpoint_path": "work/cache/simcot/m1_init/mpilligua_checkpoint24/checkpoint_24",
+  "allow_missing_auxiliary": true,
+  "dataset_path": "work/cache/simcot/data/raw/test.txt",
+  "dataset_name": "GSM8K-Aug",
+  "ground_truth_source": "dataset.answer",
+  "expected_accuracy": 0.366,
+  "accuracy_tolerance": 0.01,
+  "latent_tokens": 10,
+  "max_new_tokens": 64,
+  "flush_every": 25,
+  "output_dir": "outputs/reliable_simcot/r009_candidates/mpilligua_checkpoint24/gsm8k-aug"
+}

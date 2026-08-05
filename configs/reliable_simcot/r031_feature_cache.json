@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "run_id": "R031",
+  "device": "cuda",
+  "precision": "bf16",
+  "feature_dtype": "float16",
+  "latent_stage": 5,
+  "c_thought": 2,
+  "splits": ["head_train", "head_validation", "head_audit"],
+  "shard_rows": 512,
+  "progress_every": 25,
+  "max_reserved_memory_gb": 7.4,
+  "official_source_dir": "work/vendor/SIM-CoT/Coconut",
+  "base_model_dir": "work/cache/simcot/gpt2_base",
+  "tokenizer_path": "work/cache/simcot/gpt2_base/tokenizer.json",
+  "tokenizer_sha256": "8414cab924d8b9b33013f0d221c5862f365ee9be39c5c2bfae8a5a9e970478a6",
+  "checkpoint_path": "work/cache/simcot/checkpoint/checkpoint_28",
+  "checkpoint_sha256": "99b3f9183ea2c4eec61b3fe324ac583f6b7e9e97700c15fc0d37b628120b90b4",
+  "dataset_manifest_path": "outputs/reliable_simcot/r030_reliability_data_v2/manifest.json",
+  "dataset_manifest_sha256": "4704feeeb7979c05472ca5041a7a8bcdcc229467fa3ea5e17cfbb1a2b053c0f4",
+  "cache_root": "work/reliable_simcot/feature_cache",
+  "output_dir": "outputs/reliable_simcot/r031_feature_cache"
+}

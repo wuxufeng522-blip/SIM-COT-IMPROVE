@@ -209,7 +209,12 @@ def _state_dict_sha256(path: Path) -> str:
 
 
 def validate_r004_for_resume(metrics: dict[str, Any], checkpoint_path: Path) -> None:
-    if metrics.get("run_id") != "R004" or metrics.get("status") != "PASS":
+    run_id = metrics.get("run_id")
+    if (
+        not isinstance(run_id, str)
+        or (run_id != "R004" and not run_id.startswith("R004-v"))
+        or metrics.get("status") != "PASS"
+    ):
         raise ValueError("R004 must pass before the R005 resume probe")
     if not metrics.get("reload_consistent") or not metrics.get("gate_passed"):
         raise ValueError("R004 reload and training gates must pass before R005")
@@ -264,6 +269,27 @@ def run_training_smoke(
             raise ValueError(f"Path escapes project root: {value}")
         return target
 
+    output_dir = project_path(config["output_dir"])
+    output_dir.mkdir(parents=True, exist_ok=True)
+    progress_path = output_dir / "progress.json"
+
+    def write_progress(phase: str, **details: Any) -> None:
+        payload = {
+            "schema_version": 1,
+            "run_id": config["run_id"],
+            "phase": phase,
+            "timestamp_unix": time.time(),
+            **details,
+        }
+        temporary = progress_path.with_suffix(".json.tmp")
+        temporary.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        temporary.replace(progress_path)
+
+    write_progress("validating_inputs", completed_updates=0)
+
     provenance = json.loads(
         project_path(config["provenance_manifest"]).read_text(encoding="utf-8")
     )
@@ -292,6 +318,7 @@ def run_training_smoke(
     torch.cuda.reset_peak_memory_stats(device)
     started = time.perf_counter()
 
+    write_progress("loading_model", completed_updates=0)
     model, tokenizer, token_ids = load_official_model(
         official_coconut_dir=project_path(config["official_source_dir"]),
         base_model_dir=project_path(config["base_model_dir"]),
@@ -302,6 +329,7 @@ def run_training_smoke(
         dtype=torch.float32,
         move_auxiliary_to_device=True,
     )
+    write_progress("selecting_example", completed_updates=0)
     encoded = select_longest_trainable_example(
         project_path(config["dataset_path"]),
         tokenizer,
@@ -317,6 +345,12 @@ def run_training_smoke(
         batch,
         latent_id=token_ids["<|latent|>"],
         c_thought=config["c_thought"],
+    )
+    write_progress(
+        "probing_initial_loss",
+        completed_updates=0,
+        example_idx=encoded.example.idx,
+        input_tokens=len(encoded.input_ids),
     )
 
     precision = config["precision"]
@@ -359,17 +393,31 @@ def run_training_smoke(
             optimizer.step()
         update_loss = sum(micro_losses) / len(micro_losses)
         update_losses.append(update_loss)
+        write_progress(
+            "training",
+            completed_updates=update + 1,
+            target_updates=updates,
+            last_loss=update_loss,
+            peak_reserved_gb=torch.cuda.max_memory_reserved(device) / 1024**3,
+        )
         print(
             f"smoke update {update + 1}/{updates}: loss={update_loss:.6f}",
             flush=True,
         )
 
+    write_progress("probing_final_loss", completed_updates=updates)
     final_loss = _probe_loss(model, batch, precision=precision)
     peak_reserved_gb = torch.cuda.max_memory_reserved(device) / 1024**3
     checkpoint_dir = project_path(config["work_dir"])
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     checkpoint_path = checkpoint_dir / "checkpoint_smoke.pt"
+    write_progress(
+        "saving_checkpoint",
+        completed_updates=updates,
+        checkpoint_path=str(checkpoint_path),
+    )
     torch.save(model.state_dict(), checkpoint_path)
+    write_progress("hashing_checkpoint", completed_updates=updates)
     checkpoint_sha = _state_dict_sha256(checkpoint_path)
     probe_before_reload = final_loss
 
@@ -377,6 +425,7 @@ def run_training_smoke(
     gc.collect()
     torch.cuda.empty_cache()
 
+    write_progress("reloading_checkpoint", completed_updates=updates)
     reloaded, reloaded_tokenizer, reloaded_token_ids = load_official_model(
         official_coconut_dir=project_path(config["official_source_dir"]),
         base_model_dir=project_path(config["base_model_dir"]),
@@ -393,6 +442,7 @@ def run_training_smoke(
         reloaded_batch,
         precision=precision,
     )
+    write_progress("compiling_metrics", completed_updates=updates)
     reload_delta = abs(probe_before_reload - probe_after_reload)
     elapsed = time.perf_counter() - started
     finite = all(math.isfinite(value) for value in [initial_loss, final_loss, *update_losses])
@@ -473,12 +523,17 @@ def run_training_smoke(
     else:
         result["status"] = "SANITY_PASS" if result["sanity_passed"] else "SANITY_FAIL"
 
-    output_dir = project_path(config["output_dir"])
-    output_dir.mkdir(parents=True, exist_ok=True)
     metrics_path = output_dir / "metrics.json"
     metrics_path.write_text(
         json.dumps(result, ensure_ascii=False, indent=2),
         encoding="utf-8",
+    )
+    write_progress(
+        "complete",
+        completed_updates=updates,
+        status=result["status"],
+        gate_passed=result["gate_passed"],
+        metrics_path=str(metrics_path),
     )
     return result
 
@@ -597,7 +652,7 @@ def run_resume_smoke_probe(
         for value in [loss_before, loss_after_update, *micro_losses]
     )
     result = {
-        "run_id": "R005",
+        "run_id": config.get("run_id", "R005"),
         "status": "PASS",
         "source_checkpoint_path": str(source_checkpoint),
         "source_checkpoint_sha256": r004_metrics["checkpoint_sha256"],

@@ -1,0 +1,14 @@
+{
+  "schema_version": 2,
+  "run_id": "R030-v2",
+  "dataset_path": "work/cache/simcot/data/raw/train.txt",
+  "dataset_sha256": "0a3909a9e7d8d2f7ad6b8c7b5608aa744988d835f9bf874d4cf06ca77df6bf8c",
+  "natural_audit_manifest_path": "outputs/reliable_simcot/r020_natural_audit/freeze_manifest.json",
+  "natural_audit_manifest_sha256": "d62713d4d9d9490ceafe8ce37603747c106a35c0be9462b21d54ee26ef662690",
+  "question_count": 2000,
+  "selection_seed": 20260806,
+  "split_seed": 20260807,
+  "train_fraction": 0.6,
+  "validation_fraction": 0.2,
+  "output_dir": "outputs/reliable_simcot/r030_reliability_data_v2"
+}
