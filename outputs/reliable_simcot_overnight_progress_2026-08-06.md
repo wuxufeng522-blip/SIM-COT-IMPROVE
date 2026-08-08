@@ -145,3 +145,19 @@
 - `outputs/reliable_simcot/r031_r035_lofo/lofo_metrics.json`
 
 本报告不把自动候选数写成自然噪声率，不把失败的 checkpoint 来源写成官方权重，也不把 validation 高分或局部通过的污染族写成整体方法有效。补偿性错误封存族没有打开，加权训练没有启动。
+
+## 2026-08-09：Oracle 步骤加权机制验证
+
+在用户明确要求先验证“若能正确识别污染步，给它 0.1 权重是否有助于推理”后，新建了独立的 O001–O020 受控机制实验。该实验不复用失败的可靠性头，而用合成数据生成器记录的真实污染位置作为完美判别器，因此只检验加权机制，不检验检测器。
+
+- 四组都从已验证的官方 checkpoint 28 起步，使用同一批 2,048 条训练样本、同一顺序、同一初始化和逐微批 dropout 种子。
+- 每题前五步恰好污染一步；五类污染与五个位置形成 25 个联合单元，每格 81–82 条。
+- 全 1 自定义步骤损失与官方实现的绝对误差仅 `4.768e-07`；58 项测试通过；四组峰值训练显存均为 5.527 GB。
+- 完整 1,319 题官方测试集结果：clean `40.561%`，noisy_equal `39.803%`，raw 0.1 `41.092%`，normalized 0.1 `41.774%`。
+- raw 0.1 相对 noisy_equal 提高 `+1.289 pp`（73 胜/56 负，95% CI `[-0.379,+2.957] pp`，McNemar `p=0.1587`）。
+- normalized 0.1 相对 noisy_equal 提高 `+1.971 pp`（82 胜/56 负，95% CI `[+0.227,+3.715] pp`，McNemar `p=0.0329`）。
+- noisy_equal 相对 clean 只下降 `0.758 pp`，95% CI 跨 0，低于事先冻结的 1 pp 损伤门槛。因此严格判定为 `INCONCLUSIVE_INSUFFICIENT_NOISE_DAMAGE`，不能宣称已经完全证明恢复噪声伤害。
+
+该结果支持继续研究题内归一化的相对步骤权重，但仅有一个训练种子，且所有续训组仍低于未经续训的 checkpoint-28 基线 44.43%。下一步应把污染提高到每题 2/5 步，先验证 noisy_equal 的损伤门槛，再补三个训练种子。
+
+详细报告：`outputs/reliable_simcot/oracle_weighting/oracle_weighting_causal_report_2026-08-09.md`；机器可读分析：`outputs/reliable_simcot/oracle_weighting/o020_causal_analysis.json`；实现 commit：`9d29f08`。
