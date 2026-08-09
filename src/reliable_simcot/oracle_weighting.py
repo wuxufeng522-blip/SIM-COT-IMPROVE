@@ -27,6 +27,25 @@ from .single_gpu_smoke import encode_smoke_example, tensorize_smoke_example
 
 ARMS = ("clean", "noisy_equal", "oracle_raw_0.1", "oracle_normalized_0.1")
 
+DEFAULT_RUN_IDS = {
+    "clean": "O010",
+    "noisy_equal": "O011",
+    "oracle_raw_0.1": "O012",
+    "oracle_normalized_0.1": "O013",
+}
+
+
+def _output_root(root: Path, config: dict[str, Any]) -> Path:
+    return (root / config.get("output_root", "outputs/reliable_simcot/oracle_weighting")).resolve()
+
+
+def _work_root(root: Path, config: dict[str, Any]) -> Path:
+    return (root / config.get("work_root", "work/reliable_simcot/oracle_weighting")).resolve()
+
+
+def _run_ids(config: dict[str, Any]) -> dict[str, str]:
+    return {**DEFAULT_RUN_IDS, **config.get("run_ids", {})}
+
 
 def _canonical_hash(payload: dict[str, Any]) -> str:
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
@@ -61,6 +80,171 @@ def _variant_for(example: OfficialExample, family: str, position: int):
     return next((item for item in variants if item.family == family), None)
 
 
+def _legacy_corruption(entry: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "position": int(entry["noise_position"]),
+        "family": entry.get("noise_family"),
+        "template_id": entry.get("noise_template_id"),
+        "text": entry["corrupted_step"],
+        "text_sha256": entry.get("corrupted_step_sha256"),
+        "y_valid": entry.get("y_valid"),
+        "y_utility": entry.get("y_utility"),
+    }
+
+
+def _entry_corruptions(entry: dict[str, Any]) -> tuple[dict[str, Any], ...]:
+    corruptions = entry.get("corruptions")
+    if corruptions is None:
+        return (_legacy_corruption(entry),)
+    return tuple(corruptions)
+
+
+def _create_two_noise_schedule(
+    config: dict[str, Any], *, root: Path, dataset_path: Path, checkpoint_path: Path
+) -> dict[str, Any]:
+    parent_path = (root / config["parent_schedule_path"]).resolve()
+    parent = json.loads(parent_path.read_text(encoding="utf-8"))
+    verify_schedule(parent)
+    if parent["schedule_sha256"] != config["parent_schedule_sha256"]:
+        raise ValueError("Parent oracle schedule SHA-256 mismatch")
+    target = config["updates"] * config["gradient_accumulation_steps"]
+    if len(parent["entries"]) != target or parent["effective_micro_batches"] != target:
+        raise ValueError("Parent schedule length does not match the requested run")
+    examples = resolve_scheduled_examples(parent, dataset_path=dataset_path)
+
+    family_offset = int(config.get("secondary_family_offset", 4))
+    position_offset = int(config.get("secondary_position_offset", 2))
+    if family_offset % len(DEVELOPMENT_FAMILIES) == 0 or position_offset % 5 == 0:
+        raise ValueError("Second contamination must use a different family and position")
+
+    requests: list[tuple[str, int]] = []
+    for entry in parent["entries"]:
+        first_family_index = DEVELOPMENT_FAMILIES.index(entry["noise_family"])
+        requests.append(
+            (
+                DEVELOPMENT_FAMILIES[
+                    (first_family_index + family_offset) % len(DEVELOPMENT_FAMILIES)
+                ],
+                (int(entry["noise_position"]) + position_offset) % 5,
+            )
+        )
+    original_requests = tuple(requests)
+    variant_cache: dict[tuple[int, str, int], Any] = {}
+
+    def available(index: int, request: tuple[str, int]):
+        family, position = request
+        first = parent["entries"][index]
+        if family == first["noise_family"] or position == int(first["noise_position"]):
+            return None
+        key = (index, family, position)
+        if key not in variant_cache:
+            variant_cache[key] = _variant_for(examples[index], family, position)
+        return variant_cache[key]
+
+    # A request swap keeps the exact aggregate family-position counts. Multiple
+    # deterministic restarts avoid depending on a single greedy repair order.
+    final_swaps: list[tuple[int, int]] | None = None
+    for restart in range(int(config.get("schedule_repair_restarts", 32))):
+        requests = list(original_requests)
+        rng = random.Random(config["seed"] + 10_000 + restart)
+        failing = [index for index, request in enumerate(requests) if available(index, request) is None]
+        rng.shuffle(failing)
+        swaps: list[tuple[int, int]] = []
+        for index in failing:
+            if available(index, requests[index]) is not None:
+                continue
+            candidates = list(range(target))
+            rng.shuffle(candidates)
+            for other in candidates:
+                if other == index:
+                    continue
+                if (
+                    available(index, requests[other]) is not None
+                    and available(other, requests[index]) is not None
+                ):
+                    requests[index], requests[other] = requests[other], requests[index]
+                    swaps.append((index, other))
+                    break
+            else:
+                break
+        if all(available(index, request) is not None for index, request in enumerate(requests)):
+            final_swaps = swaps
+            break
+    if final_swaps is None:
+        remaining = sum(
+            available(index, request) is None for index, request in enumerate(requests)
+        )
+        raise ValueError(f"Could not repair {remaining} unavailable second corruptions")
+
+    entries: list[dict[str, Any]] = []
+    for index, (parent_entry, example, request) in enumerate(
+        zip(parent["entries"], examples, requests, strict=True)
+    ):
+        family, position = request
+        variant = available(index, request)
+        if variant is None:
+            raise AssertionError("A repaired corruption unexpectedly became unavailable")
+        first = _legacy_corruption(parent_entry)
+        second = {
+            "position": position,
+            "family": family,
+            "template_id": variant.template_id,
+            "text": variant.text,
+            "text_sha256": sha256(variant.text.encode("utf-8")).hexdigest(),
+            "y_valid": variant.y_valid,
+            "y_utility": variant.y_utility,
+        }
+        if first["position"] == second["position"] or first["family"] == second["family"]:
+            raise AssertionError("The two corruptions are not distinct")
+        entry = dict(parent_entry)
+        entry["corruptions"] = [first, second]
+        entries.append(entry)
+
+    all_corruptions = [item for entry in entries for item in entry["corruptions"]]
+    index_order = [entry["idx"] for entry in entries]
+    schedule = {
+        "schema_version": 2,
+        "run_id": config.get("schedule_run_id", "O101"),
+        "status": "PASS",
+        "seed": config["seed"],
+        "dataset_path": str(dataset_path),
+        "dataset_sha256": config["dataset_sha256"],
+        "checkpoint_path": str(checkpoint_path),
+        "checkpoint_sha256": config["checkpoint_sha256"],
+        "parent_schedule_path": str(parent_path),
+        "parent_schedule_sha256": parent["schedule_sha256"],
+        "parent_index_order_sha256": sha256(
+            json.dumps(index_order, separators=(",", ":")).encode("utf-8")
+        ).hexdigest(),
+        "updates": config["updates"],
+        "gradient_accumulation_steps": config["gradient_accumulation_steps"],
+        "effective_micro_batches": target,
+        "contaminated_steps_per_example": 2,
+        "supervised_steps_per_example": 5,
+        "step_contamination_rate": 0.4,
+        "secondary_family_offset": family_offset,
+        "secondary_position_offset": position_offset,
+        "repair_restart": restart,
+        "repair_swap_count": len(final_swaps),
+        "repair_swaps_sha256": sha256(
+            json.dumps(final_swaps, separators=(",", ":")).encode("utf-8")
+        ).hexdigest(),
+        "family_counts": dict(Counter(item["family"] for item in all_corruptions)),
+        "position_counts": dict(Counter(str(item["position"]) for item in all_corruptions)),
+        "joint_family_position_counts": dict(
+            Counter(f"{item['family']}@{item['position']}" for item in all_corruptions)
+        ),
+        "entries": entries,
+    }
+    schedule["schedule_sha256"] = _canonical_hash(schedule)
+    atomic_json((root / config["schedule_path"]).resolve(), schedule)
+    atomic_json(
+        (root / config["schedule_audit_path"]).resolve(),
+        {key: value for key, value in schedule.items() if key != "entries"},
+    )
+    return schedule
+
+
 def create_oracle_schedule(config: dict[str, Any], *, project_root: str | Path) -> dict[str, Any]:
     root = Path(project_root).resolve()
     dataset_path = (root / config["dataset_path"]).resolve()
@@ -69,6 +253,11 @@ def create_oracle_schedule(config: dict[str, Any], *, project_root: str | Path) 
         raise ValueError("Training dataset SHA-256 mismatch")
     if sha256_file(checkpoint_path) != config["checkpoint_sha256"]:
         raise ValueError("Starting checkpoint SHA-256 mismatch")
+
+    if int(config.get("noise_steps_per_example", 1)) == 2:
+        return _create_two_noise_schedule(
+            config, root=root, dataset_path=dataset_path, checkpoint_path=checkpoint_path
+        )
 
     audit_path = (root / config["audit_manifest_path"]).resolve()
     audit = json.loads(audit_path.read_text(encoding="utf-8"))
@@ -237,14 +426,16 @@ def steps_and_weights(
     if arm not in ARMS:
         raise ValueError(f"Unknown oracle-weighting arm: {arm}")
     steps = list(example.steps[:5])
-    noise_position = int(entry["noise_position"])
+    corruptions = _entry_corruptions(entry)
     if arm != "clean":
-        steps[noise_position] = entry["corrupted_step"]
+        for corruption in corruptions:
+            steps[int(corruption["position"])] = corruption["text"]
     if arm in {"clean", "noisy_equal"}:
         weights = [1.0] * 5
     else:
         weights = [1.0] * 5
-        weights[noise_position] = 0.1
+        for corruption in corruptions:
+            weights[int(corruption["position"])] = 0.1
         if arm == "oracle_normalized_0.1":
             scale = 5.0 / sum(weights)
             weights = [value * scale for value in weights]
@@ -381,7 +572,7 @@ def loss_parity_gate(config: dict[str, Any], *, project_root: str | Path) -> dic
     custom_value = float(custom["loss"].float().item())
     delta = abs(official_value - custom_value)
     result = {
-        "run_id": "O002",
+        "run_id": config.get("sanity_run_id", "O002"),
         "phase": "loss_parity",
         "example_idx": example.idx,
         "official_loss": official_value,
@@ -441,8 +632,8 @@ def run_training_arm(
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=config["learning_rate"], weight_decay=config["weight_decay"]
     )
-    output_dir = root / "outputs/reliable_simcot/oracle_weighting" / f"{arm}{output_suffix}"
-    work_dir = root / "work/reliable_simcot/oracle_weighting" / f"{arm}{output_suffix}"
+    output_dir = _output_root(root, config) / f"{arm}{output_suffix}"
+    work_dir = _work_root(root, config) / f"{arm}{output_suffix}"
     output_dir.mkdir(parents=True, exist_ok=True)
     started = time.perf_counter()
     update_losses: list[float] = []
@@ -530,7 +721,7 @@ def run_training_arm(
         checkpoint_hash = sha256_file(checkpoint_path)
     elapsed = time.perf_counter() - started
     result = {
-        "run_id": {"clean": "O010", "noisy_equal": "O011", "oracle_raw_0.1": "O012", "oracle_normalized_0.1": "O013"}[arm],
+        "run_id": _run_ids(config)[arm],
         "arm": arm,
         "status": "PASS",
         "seed": config["seed"],
@@ -568,19 +759,22 @@ def run_sanity_gate(config: dict[str, Any], *, project_root: str | Path) -> dict
     root = Path(project_root).resolve()
     parity = loss_parity_gate(config, project_root=root)
     arm_results: dict[str, Any] = {}
+    sanity_arms = tuple(config.get("sanity_arms", ARMS))
+    if any(arm not in ARMS for arm in sanity_arms):
+        raise ValueError("Unknown arm in sanity_arms")
     if parity["gate_passed"]:
-        for arm in ARMS:
+        for arm in sanity_arms:
             arm_results[arm] = run_training_arm(
                 config, arm, project_root=root, updates_override=1,
                 output_suffix="_sanity", save_checkpoint=False
             )
     result = {
-        "run_id": "O002",
+        "run_id": config.get("sanity_run_id", "O002"),
         "status": "PASS",
         "parity": parity,
         "arms": arm_results,
     }
-    result["gate_passed"] = parity["gate_passed"] and len(arm_results) == len(ARMS) and all(
+    result["gate_passed"] = parity["gate_passed"] and len(arm_results) == len(sanity_arms) and all(
         item["gate_passed"] for item in arm_results.values()
     )
     result["status"] = "PASS" if result["gate_passed"] else "FAIL"

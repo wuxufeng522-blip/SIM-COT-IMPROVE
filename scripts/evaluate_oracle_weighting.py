@@ -14,12 +14,26 @@ from reliable_simcot.oracle_weighting import ARMS, grouped_auxiliary_loss, token
 from reliable_simcot.single_gpu_smoke import encode_smoke_example, tensorize_smoke_example
 
 
-RUN_IDS = {
+DEFAULT_RUN_IDS = {
     "clean": "O010",
     "noisy_equal": "O011",
     "oracle_raw_0.1": "O012",
     "oracle_normalized_0.1": "O013",
 }
+
+
+def _output_root(root: Path, config: dict) -> Path:
+    return (root / config.get("output_root", "outputs/reliable_simcot/oracle_weighting")).resolve()
+
+
+def _run_ids(config: dict) -> dict[str, str]:
+    return {**DEFAULT_RUN_IDS, **config.get("run_ids", {})}
+
+
+def _prediction_dir(root: Path, config: dict, arm: str) -> Path:
+    if arm == "clean" and config.get("clean_reference_eval_dir"):
+        return (root / config["clean_reference_eval_dir"]).resolve()
+    return _output_root(root, config) / "eval" / arm
 
 
 def parse_args() -> argparse.Namespace:
@@ -95,9 +109,10 @@ def evaluate_arm(config: dict, arm: str, *, root: Path, resume: bool) -> dict:
         raise ValueError("Test dataset SHA-256 mismatch")
     if sha256_file(root / config["validation_dataset_path"]) != config["validation_dataset_sha256"]:
         raise ValueError("Validation dataset SHA-256 mismatch")
-    train_metrics_path = root / "outputs/reliable_simcot/oracle_weighting" / arm / "metrics.json"
+    run_ids = _run_ids(config)
+    train_metrics_path = _output_root(root, config) / arm / "metrics.json"
     train_metrics = json.loads(train_metrics_path.read_text(encoding="utf-8"))
-    if train_metrics.get("status") != "PASS" or train_metrics.get("run_id") != RUN_IDS[arm]:
+    if train_metrics.get("status") != "PASS" or train_metrics.get("run_id") != run_ids[arm]:
         raise ValueError(f"Formal training did not pass for {arm}")
     checkpoint = Path(train_metrics["checkpoint_path"])
     if sha256_file(checkpoint) != train_metrics["checkpoint_sha256"]:
@@ -117,7 +132,7 @@ def evaluate_arm(config: dict, arm: str, *, root: Path, resume: bool) -> dict:
     validation = clean_validation_nll(
         model, tokenizer, token_ids, config, root=root, device=device
     )
-    output_dir = root / "outputs/reliable_simcot/oracle_weighting/eval" / arm
+    output_dir = _output_root(root, config) / "eval" / arm
     metrics = evaluate_checkpoint(
         model=model,
         tokenizer=tokenizer,
@@ -134,9 +149,9 @@ def evaluate_arm(config: dict, arm: str, *, root: Path, resume: bool) -> dict:
     )
     metrics.update(
         {
-            "run_id": "O020",
+            "run_id": config.get("analysis_run_id", "O020"),
             "arm": arm,
-            "training_run_id": RUN_IDS[arm],
+            "training_run_id": run_ids[arm],
             "checkpoint_sha256": train_metrics["checkpoint_sha256"],
             "clean_validation": validation,
         }
@@ -188,7 +203,7 @@ def _paired_comparison(
 def analyze(config: dict, *, root: Path) -> dict:
     rows = {
         arm: _read_predictions(
-            root / "outputs/reliable_simcot/oracle_weighting/eval" / arm / "predictions.jsonl"
+            _prediction_dir(root, config, arm) / "predictions.jsonl"
         )
         for arm in ARMS
     }
@@ -239,7 +254,7 @@ def analyze(config: dict, *, root: Path) -> dict:
     else:
         interpretation = "POSITIVE_SELECTIVE_ORACLE_WEIGHTING_EVIDENCE"
     result = {
-        "run_id": "O020",
+        "run_id": config.get("analysis_run_id", "O020"),
         "status": "PASS",
         "examples": expected,
         "ground_truth_source": "official test dataset answer field",
@@ -257,7 +272,7 @@ def analyze(config: dict, *, root: Path) -> dict:
         "interpretation": interpretation,
         "claim_boundary": "Tests perfect-label weighting on controlled synthetic auxiliary-step noise; does not validate a detector or natural teacher noise.",
     }
-    atomic_json(root / "outputs/reliable_simcot/oracle_weighting/o020_causal_analysis.json", result)
+    atomic_json(_output_root(root, config) / config.get("analysis_filename", "o020_causal_analysis.json"), result)
     return result
 
 
