@@ -49,6 +49,19 @@
 | R073 | M6 | 复现包检查 | clean environment | configs/manifests | one-command dry run | MUST | TODO | hash 全部可追溯 |
 | R074 | M6 | 结论边界检查 | gate report | all results | claim wording | MUST | TODO | 负结果也按规则报告 |
 
+## Oracle Weighting 40% Follow-up (2026-08-10)
+
+| Run ID | Milestone | Purpose | Status | Notes |
+| --- | --- | --- | --- | --- |
+| O101 | Controlled-noise schedule | Add a second distinct contamination to every frozen 20% example | PASS | 2,048 examples; 40% step noise; schedule SHA `9098f67d...` |
+| O102 | Sanity | Loss parity and one-update GPU gate | PASS | Delta `4.768e-7`; peak `5.139 GiB` |
+| O111 | Formal training | 40% noisy equal weighting | PASS | 256 updates; peak `5.527 GiB` |
+| O112 | Formal training | 40% oracle raw-0.1 | PASS | 256 updates; peak `5.527 GiB` |
+| O113 | Formal training | 40% oracle normalized-0.1 | PASS | 256 updates; peak `5.527 GiB` |
+| O120 | Full paired evaluation | Official 1,319-example test and causal analysis | PASS | Execution PASS; scientific verdict `INCONCLUSIVE_INSUFFICIENT_NOISE_DAMAGE` |
+
+Report: `outputs/reliable_simcot/oracle_weighting_40pct/oracle_weighting_40pct_causal_report_2026-08-10.md`
+
 ## Immediate Queue
 
 1. R010：同预算本地 Coconut 短训练
