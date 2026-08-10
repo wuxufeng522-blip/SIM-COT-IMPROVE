@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "run_id": "C001",
+  "status": "PASS",
+  "seed": 20260809,
+  "dataset_path": "C:\\Users\\78209\\Documents\\Codex\\2026-08-04\\towards-efficient-cot-distillation-self-guided\\work\\cache\\simcot\\data\\raw\\train.txt",
+  "dataset_sha256": "0a3909a9e7d8d2f7ad6b8c7b5608aa744988d835f9bf874d4cf06ca77df6bf8c",
+  "checkpoint_path": "C:\\Users\\78209\\Documents\\Codex\\2026-08-04\\towards-efficient-cot-distillation-self-guided\\work\\cache\\simcot\\checkpoint\\checkpoint_28",
+  "checkpoint_sha256": "99b3f9183ea2c4eec61b3fe324ac583f6b7e9e97700c15fc0d37b628120b90b4",
+  "audit_manifest_path": "C:\\Users\\78209\\Documents\\Codex\\2026-08-04\\towards-efficient-cot-distillation-self-guided\\outputs\\reliable_simcot\\r020_natural_audit\\freeze_manifest.json",
+  "audit_manifest_sha256": "d62713d4d9d9490ceafe8ce37603747c106a35c0be9462b21d54ee26ef662690",
+  "excluded_audit_questions": 800,
+  "eligible_unique_questions": 16133,
+  "minimum_candidates_per_cell_observed": 4263,
+  "candidate_cell_counts": {
+    "numeric_propagation@0": 5703,
+    "operator_propagation@1": 5733,
+    "quantity_propagation@2": 6404,
+    "numeric_propagation@1": 5726,
+    "operator_propagation@2": 10672,
+    "quantity_propagation@0": 4790,
+    "numeric_propagation@2": 10588,
+    "operator_propagation@0": 5701,
+    "quantity_propagation@1": 4263
+  },
+  "rejection_counts": {
+    "no_verified_causal_chain": 368603,
+    "natural_audit_question": 800,
+    "duplicate_question": 84
+  },
+  "causal_families": [
+    "numeric_propagation",
+    "operator_propagation",
+    "quantity_propagation"
+  ],
+  "pivot_positions": [
+    0,
+    1,
+    2
+  ],
+  "affected_supervised_steps_per_corrupted_example": 3,
+  "supervised_steps_per_example": 5,
+  "coverage_candidates_percent": [
+    25,
+    50,
+    75
+  ],
+  "dev_dataset_path": "C:\\Users\\78209\\Documents\\Codex\\2026-08-04\\towards-efficient-cot-distillation-self-guided\\work\\reliable_simcot\\causal_propagation\\causal_dev.txt",
+  "dev_dataset_sha256": "5563cfb040a209c30f9c50a6e4dc82249918af6e2267f35d64d7fe4d203e228b",
+  "splits": {
+    "pilot": {
+      "examples": 512,
+      "question_order_sha256": "78df9bf485d0bd77448751a7297afc6b22e25a15fb9233dd7a449f58718dde1a",
+      "coverage_tier_counts": {
+        "2": 128,
+        "3": 128,
+        "1": 128,
+        "0": 128
+      },
+      "family_counts": {
+        "quantity_propagation": 170,
+        "numeric_propagation": 171,
+        "operator_propagation": 171
+      },
+      "pivot_counts": {
+        "0": 171,
+        "1": 170,
+        "2": 171
+      },
+      "joint_cell_counts": {
+        "quantity_propagation@0": 57,
+        "numeric_propagation@0": 57,
+        "numeric_propagation@1": 57,
+        "quantity_propagation@1": 56,
+        "operator_propagation@1": 57,
+        "quantity_propagation@2": 57,
+        "operator_propagation@2": 57,
+        "numeric_propagation@2": 57,
+        "operator_propagation@0": 57
+      }
+    },
+    "dev": {
+      "examples": 512,
+      "question_order_sha256": "1ea29bc2537efbf81b6a61fc71b4f339b7db29e323b8ed3461adebb83c817a8c",
+      "coverage_tier_counts": {
+        "None": 512
+      },
+      "family_counts": {
+        "operator_propagation": 171,
+        "quantity_propagation": 170,
+        "numeric_propagation": 171
+      },
+      "pivot_counts": {
+        "1": 170,
+        "0": 171,
+        "2": 171
+      },
+      "joint_cell_counts": {
+        "operator_propagation@1": 57,
+        "quantity_propagation@0": 57,
+        "numeric_propagation@2": 57,
+        "quantity_propagation@1": 56,
+        "operator_propagation@0": 57,
+        "quantity_propagation@2": 57,
+        "operator_propagation@2": 57,
+        "numeric_propagation@1": 57,
+        "numeric_propagation@0": 57
+      }
+    },
+    "formal": {
+      "examples": 2048,
+      "question_order_sha256": "5d0ccada9e7a03dbcecd99bafa96d79778d34bd590586997292f056709e439f7",
+      "coverage_tier_counts": {
+        "0": 512,
+        "2": 512,
+        "3": 512,
+        "1": 512
+      },
+      "family_counts": {
+        "operator_propagation": 683,
+        "quantity_propagation": 682,
+        "numeric_propagation": 683
+      },
+      "pivot_counts": {
+        "2": 683,
+        "1": 683,
+        "0": 682
+      },
+      "joint_cell_counts": {
+        "operator_propagation@2": 228,
+        "quantity_propagation@1": 227,
+        "numeric_propagation@2": 227,
+        "numeric_propagation@1": 228,
+        "quantity_propagation@2": 228,
+        "numeric_propagation@0": 228,
+        "operator_propagation@0": 227,
+        "operator_propagation@1": 228,
+        "quantity_propagation@0": 227
+      }
+    }
+  },
+  "schedule_sha256": "c6274e731585ea65cef99f941dd1432f3bee5cd853fc923e23534f723df215dd"
+}

@@ -1,0 +1,102 @@
+{
+  "quantity_propagation": {
+    "source_idx": 113132,
+    "question": "Lily cycles for 1.5 hours at 15 mph and then 1 hour for 10 mph. Jack runs for 2 hours at 11 mph. How much farther, in miles, does Lily go on her bike compared to Jack?",
+    "answer": "10.5",
+    "clean_steps": [
+      "<<1.5*15=22.5>>",
+      "<<1*10=10>>",
+      "<<22.5+10=32.5>>",
+      "<<2*11=22>>",
+      "<<32.5-22=10.5>>"
+    ],
+    "corrupted_first_five": [
+      "<<1.5*14=21>>",
+      "<<1*10=10>>",
+      "<<21+10=31>>",
+      "<<2*11=22>>",
+      "<<31-22=9>>"
+    ],
+    "labels": [
+      "DIRECT_ERROR",
+      "CLEAN",
+      "CAUSAL_DESCENDANT",
+      "CLEAN",
+      "CAUSAL_DESCENDANT"
+    ],
+    "affected_positions": [
+      0,
+      2,
+      4
+    ],
+    "propagated_final_value": "9",
+    "chain_sha256": "cc9eebbe3751b0ab8fabc24cf57b50a569657640fdadfc39a357fd3da98c36fd"
+  },
+  "numeric_propagation": {
+    "source_idx": 76605,
+    "question": "Karen has an online boutique. She bought 15 dresses at $50 each and 10 jackets at $80 each. If she sold all the dresses and jackets at a profit of $20 per item, what is her total profit?",
+    "answer": "-1050",
+    "clean_steps": [
+      "<<15*50=750>>",
+      "<<10*80=800>>",
+      "<<750+800=1550>>",
+      "<<25*20=500>>",
+      "<<500-1550=-1050>>"
+    ],
+    "corrupted_first_five": [
+      "<<15*50=751>>",
+      "<<10*80=800>>",
+      "<<751+800=1551>>",
+      "<<25*20=500>>",
+      "<<500-1551=-1051>>"
+    ],
+    "labels": [
+      "DIRECT_ERROR",
+      "CLEAN",
+      "CAUSAL_DESCENDANT",
+      "CLEAN",
+      "CAUSAL_DESCENDANT"
+    ],
+    "affected_positions": [
+      0,
+      2,
+      4
+    ],
+    "propagated_final_value": "-1051",
+    "chain_sha256": "e1be5c0456e0a974012ec42c201cfe722b03eb50bffbe5ec9d05affd8074b5d8"
+  },
+  "operator_propagation": {
+    "source_idx": 60728,
+    "question": "Tina’s cat just gave birth to kittens. During the first week, her 2 cats had 8 times as many kittens as the number of cats Tina has, and quarter of the kittens were adopted. 2 of the kittens came back to Tina due to health issues. The next week, her 2 cats gave birth to a total of 12 kittens, with 3 of the kittens being adopted. Including Tina’s cats, how many cats does Tina now have?",
+    "answer": "25",
+    "clean_steps": [
+      "<<2*8=16>>",
+      "<<16/4=4>>",
+      "<<16-4+2=14>>",
+      "<<12-3=9>>",
+      "<<14+9=23>>",
+      "<<23+2=25>>"
+    ],
+    "corrupted_first_five": [
+      "<<2*8=16>>",
+      "<<16*4=64>>",
+      "<<16-64+2=-46>>",
+      "<<12-3=9>>",
+      "<<-46+9=-37>>"
+    ],
+    "labels": [
+      "CLEAN",
+      "DIRECT_ERROR",
+      "CAUSAL_DESCENDANT",
+      "CLEAN",
+      "CAUSAL_DESCENDANT"
+    ],
+    "affected_positions": [
+      1,
+      2,
+      4
+    ],
+    "propagated_final_value": "-35",
+    "chain_sha256": "a496ca8ec133312c849e3852b7777c4b2bf0b0c6035637ab919afa6539e7a8bd"
+  }
+}

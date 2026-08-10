@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "run_id": "C020",
+  "status": "NO_CAUSALLY_HARMFUL_TREATMENT",
+  "examples": 512,
+  "official_test_opened": false,
+  "schedule_sha256": "c6274e731585ea65cef99f941dd1432f3bee5cd853fc923e23534f723df215dd",
+  "calibration_gate_sha256": "850922ee53031653cf24799acd84d8e9ae6070f1b3e10acd5896f1c08c6ec34e",
+  "clean": {
+    "correct": 370,
+    "accuracy": 0.72265625,
+    "answer_nll": 0.40375634189769194,
+    "step_token_nll": 0.14319578190312943
+  },
+  "coverages": [
+    {
+      "coverage": 25,
+      "corrupted_examples": 128,
+      "step_contamination_rate": 0.15,
+      "correct": 382,
+      "accuracy": 0.74609375,
+      "clean_minus_noisy_accuracy": -0.0234375,
+      "clean_wrong_noisy_correct": 29,
+      "clean_correct_noisy_wrong": 17,
+      "mcnemar_exact_two_sided_p": 0.10380535550410741,
+      "answer_nll": 0.39203019431423947,
+      "step_token_nll": 0.18004259109600437
+    },
+    {
+      "coverage": 50,
+      "corrupted_examples": 256,
+      "step_contamination_rate": 0.3,
+      "correct": 370,
+      "accuracy": 0.72265625,
+      "clean_minus_noisy_accuracy": 0.0,
+      "clean_wrong_noisy_correct": 32,
+      "clean_correct_noisy_wrong": 32,
+      "mcnemar_exact_two_sided_p": 1.0,
+      "answer_nll": 0.40210969363076643,
+      "step_token_nll": 0.20520904271948398
+    },
+    {
+      "coverage": 75,
+      "corrupted_examples": 384,
+      "step_contamination_rate": 0.45,
+      "correct": 372,
+      "accuracy": 0.7265625,
+      "clean_minus_noisy_accuracy": -0.00390625,
+      "clean_wrong_noisy_correct": 33,
+      "clean_correct_noisy_wrong": 31,
+      "mcnemar_exact_two_sided_p": 0.9006532462520331,
+      "answer_nll": 0.4207331252144968,
+      "step_token_nll": 0.24595999311992514
+    }
+  ],
+  "formal_status": "CUT_BY_CALIBRATION_GATE",
+  "claim_boundary": "Controlled 64-update causal-propagation pilot only; no learned detector, natural-noise claim, formal training, or official-test evaluation."
+}

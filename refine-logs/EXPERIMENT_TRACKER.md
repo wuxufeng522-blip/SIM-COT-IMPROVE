@@ -62,6 +62,21 @@
 
 Report: `outputs/reliable_simcot/oracle_weighting_40pct/oracle_weighting_40pct_causal_report_2026-08-10.md`
 
+## Causal-Propagation Damage Calibration (2026-08-10)
+
+| Run ID | Milestone | Purpose | Status | Notes |
+| --- | --- | --- | --- | --- |
+| C001 | Frozen causal schedule | Three verified propagation families, three pivot positions, disjoint 512/512/2,048 splits | PASS | 16,133 eligible unique questions; schedule SHA `c6274e73...` |
+| C002 | Sanity | 78 tests, all-one loss parity, six one-update GPU arms | PASS | Parity delta `0`; peak `5.109 GB` |
+| C010 | Clean pilot | 64 updates on fixed 512-example pilot stream | PASS | 370/512 dev EM = 72.2656% |
+| C011 | 25% coverage pilot | 128 corrupted examples; 15% step noise | PASS | 382/512 = 74.6094%; damage `-2.3438 pp` |
+| C012 | 50% coverage pilot | 256 corrupted examples; 30% step noise | PASS | 370/512 = 72.2656%; damage `0 pp` |
+| C013 | 75% coverage pilot | 384 corrupted examples; 45% step noise | PASS | 372/512 = 72.6563%; damage `-0.3906 pp` |
+| C020 | Development damage gate | Select minimum coverage with at least 2 pp EM damage | FAIL | `NO_CAUSALLY_HARMFUL_TREATMENT`; official test unopened |
+| C110–C115 | Six-arm formal mechanism test | Clean/equal/uniform/pivot/raw/normalized | CUT | Preregistered upstream damage gate failed; no formal checkpoints or test predictions created |
+
+Report: `outputs/reliable_simcot/causal_propagation/causal_pilot_report_2026-08-10.md`
+
 ## Immediate Queue
 
 1. R010：同预算本地 Coconut 短训练

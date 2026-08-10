@@ -1,0 +1,239 @@
+{
+  "run_id": "C002",
+  "status": "PASS",
+  "parity": {
+    "run_id": "C002",
+    "phase": "loss_parity",
+    "example_source_idx": 113132,
+    "official_loss": 0.026981908828020096,
+    "custom_all_one_loss": 0.026981908828020096,
+    "absolute_delta": 0.0,
+    "tolerance": 0.0001,
+    "gate_passed": true
+  },
+  "arms": {
+    "clean": {
+      "run_id": "C002",
+      "split": "pilot",
+      "arm": "clean",
+      "coverage": 75,
+      "status": "PASS",
+      "seed": 20260809,
+      "updates": 1,
+      "gradient_accumulation_steps": 8,
+      "effective_micro_batches": 8,
+      "corrupted_examples": 0,
+      "effective_step_contamination_rate": 0.0,
+      "precision": "bf16",
+      "learning_rate": 0.0001,
+      "weight_decay": 0.01,
+      "max_grad_norm": 1.0,
+      "schedule_sha256": "c6274e731585ea65cef99f941dd1432f3bee5cd853fc923e23534f723df215dd",
+      "starting_checkpoint_sha256": "99b3f9183ea2c4eec61b3fe324ac583f6b7e9e97700c15fc0d37b628120b90b4",
+      "update_total_losses": [
+        5.5737670958042145
+      ],
+      "update_answer_losses": [
+        1.088115270016715
+      ],
+      "update_auxiliary_losses": [
+        4.485651880502701
+      ],
+      "finite": true,
+      "elapsed_seconds": 8.63678699999582,
+      "updates_per_hour": 416.82167222622746,
+      "peak_reserved_gb": 5.109375,
+      "memory_limit_gb": 7.4,
+      "checkpoint_path": null,
+      "checkpoint_sha256": null,
+      "within_memory_limit": true,
+      "gate_passed": true
+    },
+    "noisy_equal": {
+      "run_id": "C002",
+      "split": "pilot",
+      "arm": "noisy_equal",
+      "coverage": 75,
+      "status": "PASS",
+      "seed": 20260809,
+      "updates": 1,
+      "gradient_accumulation_steps": 8,
+      "effective_micro_batches": 8,
+      "corrupted_examples": 4,
+      "effective_step_contamination_rate": 0.3,
+      "precision": "bf16",
+      "learning_rate": 0.0001,
+      "weight_decay": 0.01,
+      "max_grad_norm": 1.0,
+      "schedule_sha256": "c6274e731585ea65cef99f941dd1432f3bee5cd853fc923e23534f723df215dd",
+      "starting_checkpoint_sha256": "99b3f9183ea2c4eec61b3fe324ac583f6b7e9e97700c15fc0d37b628120b90b4",
+      "update_total_losses": [
+        11.781849384307861
+      ],
+      "update_answer_losses": [
+        1.088115270016715
+      ],
+      "update_auxiliary_losses": [
+        10.693734139204025
+      ],
+      "finite": true,
+      "elapsed_seconds": 7.958292299997993,
+      "updates_per_hour": 452.3583533116656,
+      "peak_reserved_gb": 5.109375,
+      "memory_limit_gb": 7.4,
+      "checkpoint_path": null,
+      "checkpoint_sha256": null,
+      "within_memory_limit": true,
+      "gate_passed": true
+    },
+    "uniform_attenuation": {
+      "run_id": "C002",
+      "split": "pilot",
+      "arm": "uniform_attenuation",
+      "coverage": 75,
+      "status": "PASS",
+      "seed": 20260809,
+      "updates": 1,
+      "gradient_accumulation_steps": 8,
+      "effective_micro_batches": 8,
+      "corrupted_examples": 4,
+      "effective_step_contamination_rate": 0.3,
+      "precision": "bf16",
+      "learning_rate": 0.0001,
+      "weight_decay": 0.01,
+      "max_grad_norm": 1.0,
+      "schedule_sha256": "c6274e731585ea65cef99f941dd1432f3bee5cd853fc923e23534f723df215dd",
+      "starting_checkpoint_sha256": "99b3f9183ea2c4eec61b3fe324ac583f6b7e9e97700c15fc0d37b628120b90b4",
+      "update_total_losses": [
+        7.140425741672516
+      ],
+      "update_answer_losses": [
+        1.088115270016715
+      ],
+      "update_auxiliary_losses": [
+        6.052310556173325
+      ],
+      "finite": true,
+      "elapsed_seconds": 7.771581599954516,
+      "updates_per_hour": 463.22617265204667,
+      "peak_reserved_gb": 5.109375,
+      "memory_limit_gb": 7.4,
+      "checkpoint_path": null,
+      "checkpoint_sha256": null,
+      "within_memory_limit": true,
+      "gate_passed": true
+    },
+    "pivot_only": {
+      "run_id": "C002",
+      "split": "pilot",
+      "arm": "pivot_only",
+      "coverage": 75,
+      "status": "PASS",
+      "seed": 20260809,
+      "updates": 1,
+      "gradient_accumulation_steps": 8,
+      "effective_micro_batches": 8,
+      "corrupted_examples": 4,
+      "effective_step_contamination_rate": 0.3,
+      "precision": "bf16",
+      "learning_rate": 0.0001,
+      "weight_decay": 0.01,
+      "max_grad_norm": 1.0,
+      "schedule_sha256": "c6274e731585ea65cef99f941dd1432f3bee5cd853fc923e23534f723df215dd",
+      "starting_checkpoint_sha256": "99b3f9183ea2c4eec61b3fe324ac583f6b7e9e97700c15fc0d37b628120b90b4",
+      "update_total_losses": [
+        10.380614221096039
+      ],
+      "update_answer_losses": [
+        1.088115270016715
+      ],
+      "update_auxiliary_losses": [
+        9.292498916387558
+      ],
+      "finite": true,
+      "elapsed_seconds": 7.890513599966653,
+      "updates_per_hour": 456.244065027049,
+      "peak_reserved_gb": 5.109375,
+      "memory_limit_gb": 7.4,
+      "checkpoint_path": null,
+      "checkpoint_sha256": null,
+      "within_memory_limit": true,
+      "gate_passed": true
+    },
+    "causal_raw": {
+      "run_id": "C002",
+      "split": "pilot",
+      "arm": "causal_raw",
+      "coverage": 75,
+      "status": "PASS",
+      "seed": 20260809,
+      "updates": 1,
+      "gradient_accumulation_steps": 8,
+      "effective_micro_batches": 8,
+      "corrupted_examples": 4,
+      "effective_step_contamination_rate": 0.3,
+      "precision": "bf16",
+      "learning_rate": 0.0001,
+      "weight_decay": 0.01,
+      "max_grad_norm": 1.0,
+      "schedule_sha256": "c6274e731585ea65cef99f941dd1432f3bee5cd853fc923e23534f723df215dd",
+      "starting_checkpoint_sha256": "99b3f9183ea2c4eec61b3fe324ac583f6b7e9e97700c15fc0d37b628120b90b4",
+      "update_total_losses": [
+        4.730463311076164
+      ],
+      "update_answer_losses": [
+        1.088115270016715
+      ],
+      "update_auxiliary_losses": [
+        3.642348073422909
+      ],
+      "finite": true,
+      "elapsed_seconds": 7.765475800028071,
+      "updates_per_hour": 463.5903958373016,
+      "peak_reserved_gb": 5.109375,
+      "memory_limit_gb": 7.4,
+      "checkpoint_path": null,
+      "checkpoint_sha256": null,
+      "within_memory_limit": true,
+      "gate_passed": true
+    },
+    "causal_normalized": {
+      "run_id": "C002",
+      "split": "pilot",
+      "arm": "causal_normalized",
+      "coverage": 75,
+      "status": "PASS",
+      "seed": 20260809,
+      "updates": 1,
+      "gradient_accumulation_steps": 8,
+      "effective_micro_batches": 8,
+      "corrupted_examples": 4,
+      "effective_step_contamination_rate": 0.3,
+      "precision": "bf16",
+      "learning_rate": 0.0001,
+      "weight_decay": 0.01,
+      "max_grad_norm": 1.0,
+      "schedule_sha256": "c6274e731585ea65cef99f941dd1432f3bee5cd853fc923e23534f723df215dd",
+      "starting_checkpoint_sha256": "99b3f9183ea2c4eec61b3fe324ac583f6b7e9e97700c15fc0d37b628120b90b4",
+      "update_total_losses": [
+        6.542800188064575
+      ],
+      "update_answer_losses": [
+        1.088115270016715
+      ],
+      "update_auxiliary_losses": [
+        5.4546849727630615
+      ],
+      "finite": true,
+      "elapsed_seconds": 7.84744669997599,
+      "updates_per_hour": 458.7479389966439,
+      "peak_reserved_gb": 5.109375,
+      "memory_limit_gb": 7.4,
+      "checkpoint_path": null,
+      "checkpoint_sha256": null,
+      "within_memory_limit": true,
+      "gate_passed": true
+    }
+  },
+  "gate_passed": true
+}

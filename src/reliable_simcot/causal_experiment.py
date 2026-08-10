@@ -687,7 +687,11 @@ def run_training_arm(
         for entry in entries[: updates * accumulation]
     )
     result = {
-        "run_id": _run_id(config, split, arm, coverage),
+        "run_id": (
+            config["sanity_run_id"]
+            if output_suffix.startswith("_sanity_")
+            else _run_id(config, split, arm, coverage)
+        ),
         "split": split,
         "arm": arm,
         "coverage": coverage,

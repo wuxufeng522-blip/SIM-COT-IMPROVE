@@ -1,0 +1,10 @@
+{
+  "run_id": "C002",
+  "phase": "loss_parity",
+  "example_source_idx": 113132,
+  "official_loss": 0.026981908828020096,
+  "custom_all_one_loss": 0.026981908828020096,
+  "absolute_delta": 0.0,
+  "tolerance": 0.0001,
+  "gate_passed": true
+}
