@@ -522,6 +522,10 @@ def run_training_arm(
     updates_override: int | None = None,
     output_suffix: str = "",
     save_checkpoint: bool = True,
+    auxiliary_scale: float = 1.0,
+    training_seed: int | None = None,
+    directory_override: str | None = None,
+    run_id_override: str | None = None,
 ) -> dict[str, Any]:
     if split not in {"pilot", "formal"}:
         raise ValueError("Training split must be pilot or formal")
@@ -531,6 +535,9 @@ def run_training_arm(
     if arm == "clean" and coverage not in COVERAGES:
         raise ValueError("Use a declared coverage even though clean ignores it")
     coverage_tiers(coverage)
+    if not math.isfinite(auxiliary_scale) or auxiliary_scale < 0:
+        raise ValueError("auxiliary_scale must be finite and non-negative")
+    actual_seed = int(config["seed"] if training_seed is None else training_seed)
     root = Path(project_root).resolve()
     schedule = json.loads((root / config["schedule_path"]).read_text(encoding="utf-8"))
     verify_causal_schedule(schedule)
@@ -558,8 +565,8 @@ def run_training_arm(
         raise RuntimeError("Causal weighting training requires CUDA")
     if config["precision"] == "bf16" and not torch.cuda.is_bf16_supported():
         raise RuntimeError("BF16 is not supported by this GPU")
-    torch.manual_seed(config["seed"])
-    torch.cuda.manual_seed_all(config["seed"])
+    torch.manual_seed(actual_seed)
+    torch.cuda.manual_seed_all(actual_seed)
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats(device)
 
@@ -583,7 +590,7 @@ def run_training_arm(
         lr=config["learning_rate"],
         weight_decay=config["weight_decay"],
     )
-    directory = _arm_dir_name(split, arm, coverage) + output_suffix
+    directory = directory_override or (_arm_dir_name(split, arm, coverage) + output_suffix)
     output_dir = _output_root(root, config) / split / directory
     work_dir = _work_root(root, config) / split / directory
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -591,6 +598,7 @@ def run_training_arm(
     update_losses: list[float] = []
     answer_losses: list[float] = []
     auxiliary_losses: list[float] = []
+    preclip_gradient_norms: list[float] = []
 
     for update in range(updates):
         optimizer.zero_grad(set_to_none=True)
@@ -599,7 +607,7 @@ def run_training_arm(
         micro_aux: list[float] = []
         for micro in range(accumulation):
             position = update * accumulation + micro
-            micro_seed = int(config["seed"]) + position
+            micro_seed = actual_seed + position
             torch.manual_seed(micro_seed)
             torch.cuda.manual_seed_all(micro_seed)
             example = examples[position]
@@ -625,9 +633,10 @@ def run_training_arm(
                     latent_id=token_ids["<|latent|>"],
                     c_thought=config["c_thought"],
                 )
-                scaled = losses["loss"] / accumulation
+                objective = losses["answer_loss"] + auxiliary_scale * losses["auxiliary_loss"]
+                scaled = objective / accumulation
             values = (
-                float(losses["loss"].detach().float().item()),
+                float(objective.detach().float().item()),
                 float(losses["answer_loss"].detach().float().item()),
                 float(losses["auxiliary_loss"].detach().float().item()),
             )
@@ -642,6 +651,7 @@ def run_training_arm(
         )
         if not torch.isfinite(gradient_norm):
             raise FloatingPointError(f"Non-finite gradient norm in {directory}")
+        preclip_gradient_norms.append(float(gradient_norm.detach().float().item()))
         optimizer.step()
         update_losses.append(sum(micro_total) / accumulation)
         answer_losses.append(sum(micro_answer) / accumulation)
@@ -659,6 +669,8 @@ def run_training_arm(
                 "latest_total_loss": update_losses[-1],
                 "latest_answer_loss": answer_losses[-1],
                 "latest_auxiliary_loss": auxiliary_losses[-1],
+                "latest_preclip_gradient_norm": preclip_gradient_norms[-1],
+                "auxiliary_scale": auxiliary_scale,
                 "elapsed_seconds": elapsed,
                 "updates_per_hour": completed / elapsed * 3600,
                 "peak_reserved_gb": torch.cuda.max_memory_reserved(device) / 1024**3,
@@ -668,7 +680,9 @@ def run_training_arm(
             print(
                 f"{split}/{directory} {completed}/{updates}: "
                 f"total={update_losses[-1]:.5f}, answer={answer_losses[-1]:.5f}, "
-                f"aux={auxiliary_losses[-1]:.5f}, peak={progress['peak_reserved_gb']:.2f} GB",
+                f"aux={auxiliary_losses[-1]:.5f}, "
+                f"preclip_grad={preclip_gradient_norms[-1]:.3f}, "
+                f"peak={progress['peak_reserved_gb']:.2f} GB",
                 flush=True,
             )
 
@@ -687,7 +701,7 @@ def run_training_arm(
         for entry in entries[: updates * accumulation]
     )
     result = {
-        "run_id": (
+        "run_id": run_id_override or (
             config["sanity_run_id"]
             if output_suffix.startswith("_sanity_")
             else _run_id(config, split, arm, coverage)
@@ -696,7 +710,7 @@ def run_training_arm(
         "arm": arm,
         "coverage": coverage,
         "status": "PASS",
-        "seed": config["seed"],
+        "seed": actual_seed,
         "updates": updates,
         "gradient_accumulation_steps": accumulation,
         "effective_micro_batches": updates * accumulation,
@@ -705,6 +719,7 @@ def run_training_arm(
             0.0 if arm == "clean" else active_examples * 3 / (updates * accumulation * 5)
         ),
         "precision": config["precision"],
+        "auxiliary_scale": auxiliary_scale,
         "learning_rate": config["learning_rate"],
         "weight_decay": config["weight_decay"],
         "max_grad_norm": config["max_grad_norm"],
@@ -713,6 +728,11 @@ def run_training_arm(
         "update_total_losses": update_losses,
         "update_answer_losses": answer_losses,
         "update_auxiliary_losses": auxiliary_losses,
+        "preclip_gradient_norms": preclip_gradient_norms,
+        "gradient_clipping_fraction": sum(
+            value > config["max_grad_norm"] for value in preclip_gradient_norms
+        )
+        / len(preclip_gradient_norms),
         "finite": True,
         "elapsed_seconds": elapsed,
         "updates_per_hour": updates / elapsed * 3600,

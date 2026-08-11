@@ -77,10 +77,26 @@ Report: `outputs/reliable_simcot/oracle_weighting_40pct/oracle_weighting_40pct_c
 
 Report: `outputs/reliable_simcot/causal_propagation/causal_pilot_report_2026-08-10.md`
 
+## Auxiliary-Gradient Leverage (2026-08-12)
+
+| Run ID | Milestone | Purpose | Status | Notes |
+| --- | --- | --- | --- | --- |
+| L001 | Frozen confirm split | Prepare a new 1,024-example official-training-source confirm set | PASS | Prior pilot/dev overlap 0; manifest SHA `d4bb4540...`; official test unopened |
+| L002 | Five-arm sanity | Verify lambda objective, actual contaminated examples, memory and clipping | PASS | 81 tests; peak `5.416 GB`; post-hoc 2-update audit found 100% clipping in all arms |
+| L010 | Layerwise gradient audit | Test auxiliary-gradient reach and clean/noisy direction change | PASS | 12/12 norm layers and 12/12 direction layers passed |
+| L100–L114 | Three-seed training | Five arms × three seeds, 64 updates each | PASS | All 15 checkpoints complete; peak about `5.45 GB` |
+| L200–L214 | Frozen-confirm evaluation | EM, answer/step NLL and 256-pair chain preference | PASS | All 15 evaluations complete; no official-test access |
+| L301 | G-D answer-leverage gate | Require >=2 pp high-dose damage, 2/3 direction and monotonic dose response | FAIL | High-dose damage `2.0508 pp`, 3/3 direction, but dose delta `-1.0417 pp` |
+| L302 | G-S self-correction gate | Require noisy low-dose gain plus non-worse step NLL/preference | FAIL | EM, clean step NLL and preference all worse than clean_aux1 in 3/3 seeds |
+| L303 | Exploratory low-dose contrast | Quantify clean_aux1 versus causal_aux1 | PASS | Damage `3.0924 pp` mean, 3/3 direction; not a preregistered replacement for G-D |
+
+Report: `outputs/reliable_simcot/gradient_leverage/gradient_leverage_report_2026-08-12.md`
+
 ## Immediate Queue
 
-1. R010：同预算本地 Coconut 短训练
-2. R011：同预算本地标准 SIM-CoT 短训练
-3. R012：两分支公平性审计
+1. L400：另立规格，在新确认集直接比较 causal_aux1、oracle-0.1 和 oracle-0；不得复用本轮确认集调权重
+2. R010：同预算本地 Coconut 短训练
+3. R011：同预算本地标准 SIM-CoT 短训练
+4. R012：两分支公平性审计
 
-M0 已通过。R010–R012 可启动，但必须先冻结相同训练预算与 OOM 回退规则。
+在 L400 的 oracle 恢复门通过前，不启动可靠性头的大规模下游训练。M0 已通过；R010–R012 仍须先冻结相同训练预算与 OOM 回退规则。

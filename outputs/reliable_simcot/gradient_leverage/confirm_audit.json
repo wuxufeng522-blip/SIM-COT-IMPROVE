@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "run_id": "L001",
+  "status": "PASS",
+  "selection_rule": "first N entries of the previously frozen, unused causal formal split",
+  "examples": 1024,
+  "source_dataset_path": "C:\\Users\\78209\\Documents\\Codex\\2026-08-04\\towards-efficient-cot-distillation-self-guided\\work\\cache\\simcot\\data\\raw\\train.txt",
+  "source_dataset_sha256": "0a3909a9e7d8d2f7ad6b8c7b5608aa744988d835f9bf874d4cf06ca77df6bf8c",
+  "source_schedule_sha256": "c6274e731585ea65cef99f941dd1432f3bee5cd853fc923e23534f723df215dd",
+  "confirm_dataset_path": "C:\\Users\\78209\\Documents\\Codex\\2026-08-04\\towards-efficient-cot-distillation-self-guided\\work\\reliable_simcot\\gradient_leverage\\confirm_1024.txt",
+  "confirm_dataset_sha256": "25c0176df23cf5f5fa120aa946aaa60a2616ddd855f7892f26da50ebd049aac1",
+  "question_order_sha256": "a2be8bf3b3aad2f62a33d501fed828afe4eed9c1fdd71f5fd281b6e8f000bdf4",
+  "prior_pilot_overlap": 0,
+  "prior_dev_overlap": 0,
+  "official_test_opened": false,
+  "family_counts": {
+    "operator_propagation": 333,
+    "quantity_propagation": 368,
+    "numeric_propagation": 323
+  },
+  "pivot_counts": {
+    "2": 341,
+    "1": 353,
+    "0": 330
+  },
+  "manifest_sha256": "d4bb4540cfabbea6a194291c834739f48465c37084d65844ea01d12d41ea423a"
+}

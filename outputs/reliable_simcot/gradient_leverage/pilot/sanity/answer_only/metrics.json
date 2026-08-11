@@ -1,0 +1,49 @@
+{
+  "run_id": "L002",
+  "split": "pilot",
+  "arm": "clean",
+  "coverage": 25,
+  "status": "PASS",
+  "seed": 20260809,
+  "updates": 2,
+  "gradient_accumulation_steps": 8,
+  "effective_micro_batches": 16,
+  "corrupted_examples": 0,
+  "effective_step_contamination_rate": 0.0,
+  "precision": "bf16",
+  "auxiliary_scale": 0.0,
+  "learning_rate": 0.0001,
+  "weight_decay": 0.01,
+  "max_grad_norm": 1.0,
+  "schedule_sha256": "c6274e731585ea65cef99f941dd1432f3bee5cd853fc923e23534f723df215dd",
+  "starting_checkpoint_sha256": "99b3f9183ea2c4eec61b3fe324ac583f6b7e9e97700c15fc0d37b628120b90b4",
+  "update_total_losses": [
+    1.088115270016715,
+    1.3281837501563132
+  ],
+  "update_answer_losses": [
+    1.088115270016715,
+    1.3281837501563132
+  ],
+  "update_auxiliary_losses": [
+    4.485651880502701,
+    5.234850689768791
+  ],
+  "preclip_gradient_norms": [
+    12.302678108215332,
+    11.515952110290527
+  ],
+  "gradient_clipping_fraction": 1.0,
+  "finite": true,
+  "elapsed_seconds": 16.90162349998718,
+  "updates_per_hour": 425.994579751789,
+  "peak_reserved_gb": 5.34375,
+  "memory_limit_gb": 7.4,
+  "checkpoint_path": null,
+  "checkpoint_sha256": null,
+  "within_memory_limit": true,
+  "gate_passed": true,
+  "leverage_arm": "answer_only",
+  "target_kind": "clean",
+  "confirm_manifest_sha256": "d4bb4540cfabbea6a194291c834739f48465c37084d65844ea01d12d41ea423a"
+}

@@ -1,0 +1,56 @@
+{
+  "run_id": "L000",
+  "status": "PASS",
+  "started_unix": 1786456323.2285929,
+  "completed": [
+    "prepare",
+    "sanity",
+    "gradient_audit",
+    "train_20260809_answer_only",
+    "train_20260809_clean_aux1",
+    "train_20260809_causal_aux1",
+    "train_20260809_clean_aux3",
+    "train_20260809_causal_aux3",
+    "train_20260810_answer_only",
+    "train_20260810_clean_aux1",
+    "train_20260810_causal_aux1",
+    "train_20260810_clean_aux3",
+    "train_20260810_causal_aux3",
+    "train_20260811_answer_only",
+    "train_20260811_clean_aux1",
+    "train_20260811_causal_aux1",
+    "train_20260811_clean_aux3",
+    "train_20260811_causal_aux3",
+    "eval_20260809_answer_only",
+    "eval_20260809_clean_aux1",
+    "eval_20260809_causal_aux1",
+    "eval_20260809_clean_aux3",
+    "eval_20260809_causal_aux3",
+    "eval_20260810_answer_only",
+    "eval_20260810_clean_aux1",
+    "eval_20260810_causal_aux1",
+    "eval_20260810_clean_aux3",
+    "eval_20260810_causal_aux3",
+    "eval_20260811_answer_only",
+    "eval_20260811_clean_aux1",
+    "eval_20260811_causal_aux1",
+    "eval_20260811_clean_aux3",
+    "eval_20260811_causal_aux3",
+    "analysis"
+  ],
+  "official_test_opened": false,
+  "prepare": {
+    "manifest_sha256": "d4bb4540cfabbea6a194291c834739f48465c37084d65844ea01d12d41ea423a"
+  },
+  "sanity": {
+    "gate_passed": true
+  },
+  "gradient_audit": {
+    "verdict": "GRADIENT_PATHWAY_PRESENT"
+  },
+  "analysis": {
+    "verdict": "GRADIENT_PATHWAY_PRESENT_BUT_ANSWER_ROBUST"
+  },
+  "verdict": "GRADIENT_PATHWAY_PRESENT_BUT_ANSWER_ROBUST",
+  "finished_unix": 1786473227.385693
+}

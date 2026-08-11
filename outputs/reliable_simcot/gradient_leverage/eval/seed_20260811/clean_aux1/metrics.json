@@ -1,0 +1,38 @@
+{
+  "examples": 1024,
+  "correct": 770,
+  "accuracy": 0.751953125,
+  "dataset_path": "C:\\Users\\78209\\Documents\\Codex\\2026-08-04\\towards-efficient-cot-distillation-self-guided\\work\\reliable_simcot\\gradient_leverage\\confirm_1024.txt",
+  "ground_truth_source": "official dataset answer field",
+  "latent_tokens": 10,
+  "max_new_tokens": 64,
+  "expected_accuracy": 0.0,
+  "accuracy_tolerance": 1.0,
+  "full_evaluation": true,
+  "gate_passed": true,
+  "elapsed_seconds_this_invocation": 190.7812309000292,
+  "predictions_path": "C:\\Users\\78209\\Documents\\Codex\\2026-08-04\\towards-efficient-cot-distillation-self-guided\\outputs\\reliable_simcot\\gradient_leverage\\eval\\seed_20260811\\clean_aux1\\predictions.jsonl",
+  "peak_reserved_gb": 1.642578125,
+  "run_id": "L200",
+  "leverage_arm": "clean_aux1",
+  "seed": 20260811,
+  "training_run_id": "L1-20260811-clean_aux1",
+  "checkpoint_sha256": "763bd5c1f05a145badd5475b45cabe3a51eb53d11f3b365008b3088dd95a71f8",
+  "confirm_manifest_sha256": "d4bb4540cfabbea6a194291c834739f48465c37084d65844ea01d12d41ea423a",
+  "clean_nll": {
+    "examples": 1024,
+    "answer_nll": 0.3914204967478181,
+    "mean_step_sequence_nll": 1.4346668042708188,
+    "step_token_nll": 0.15866368666551306,
+    "step_tokens": 46296,
+    "ground_truth_source": "frozen official training rows; clean steps and answer fields"
+  },
+  "chain_preference": {
+    "examples": 256,
+    "clean_step_token_nll": 0.16671243820996168,
+    "corrupt_step_token_nll": 1.5668467889063447,
+    "clean_preference_margin": 1.400134350696383,
+    "interpretation": "positive margin means lower NLL for the clean chain"
+  },
+  "official_test_opened": false
+}
