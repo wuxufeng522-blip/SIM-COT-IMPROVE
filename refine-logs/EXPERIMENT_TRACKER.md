@@ -4,16 +4,18 @@
 
 **规格：** `docs/superpowers/specs/2026-08-26-prm800k-natural-noise-damage-design.md`
 
+**总体状态：** `BLOCKED` — 严格三联组 `0/512`，按预注册数据门停止；未启动 GPU 训练。
+
 **状态说明：** `READY` 为下一可执行项；`TODO` 等待上游；`BLOCKED` 为门失败；`DONE` 为产物和哈希已记录。
 
 | Run ID | Milestone | Purpose | System / Variant | Split | Metrics / Artifact | Priority | Status | Notes |
 |---|---|---|---|---|---|---|---|---|
-| PN001 | M0 | 固化配置、路径与上游哈希 | config/provenance | all | `provenance.json` | MUST | READY | 第一实施任务 |
-| PN002 | M0 | 获取并校验官方PRM800K | downloader/validator | raw | 文件、行数、非LFS指针、SHA-256 | MUST | TODO | 原始数据只读 |
-| PN003 | M0 | 数据解析与grader fixture | pytest | fixtures | parser/grader tests | MUST | TODO | 不打开最终预测 |
-| PN010 | M1 | 重建自然chosen轨迹 | trajectory rebuilder | PRM train | 轨迹数、排除原因 | MUST | TODO | 排除human completion/QC/flag/0 |
-| PN011 | M1 | 严格同题同批次三联审计 | triplet builder | PRM train | Clean/N1/N2、triplet count | MUST | TODO | 最高风险门 |
-| PN012 | M1 | 冻结训练/开发清单 | deterministic freezer | train/dev | 512 triples、256 clean、零重叠、hash | MUST | TODO | 不足则BLOCKED |
+| PN001 | M0 | 固化配置、路径与上游哈希 | config/provenance | all | `provenance.json` | MUST | DONE | 来源哈希已核验 |
+| PN002 | M0 | 获取并校验官方PRM800K | downloader/validator | raw | 文件、行数、非LFS指针、SHA-256 | MUST | DONE | 98,731条；官方SHA一致 |
+| PN003 | M0 | 数据解析与grader fixture | pytest | fixtures | parser/grader tests | MUST | DONE | 14项定向测试通过 |
+| PN010 | M1 | 重建自然chosen轨迹 | trajectory rebuilder | PRM train | 轨迹数、排除原因 | MUST | DONE | 最终合格537，全部Clean |
+| PN011 | M1 | 严格同题同批次三联审计 | triplet builder | PRM train | Clean/N1/N2、triplet count | MUST | DONE | 三联组0；N1/N2均无合格轨迹 |
+| PN012 | M1 | 冻结训练/开发清单 | deterministic freezer | train/dev | 512 triples、256 clean、零重叠、hash | MUST | BLOCKED | `INSUFFICIENT_STRICT_TRIPLETS` |
 | PN020 | M2 | 自由文本五步映射与单测 | arm mapper | sanity | target/answer parity | MUST | TODO | 原始步骤不改写 |
 | PN021 | M2 | 官方loss parity与零梯度测试 | loss audit | sanity | all-one delta、AO aux grad=0 | MUST | TODO | 失败不得训练 |
 | PN022 | M2 | 四组2-update GPU sanity | AO/Clean/N1/N2 | sanity | finite loss/grad、显存 | MUST | TODO | 红线7.4GB |
@@ -47,9 +49,9 @@
 | PN301 | M5 | 预注册结论 | gate reporter | all results | verdict、FLOOR flag | MUST | TODO | 互斥优先级 |
 | PN302 | M5 | 中文总结与边界 | reporter | all artifacts | JSON/MD/hash | MUST | TODO | 不外推自然流行率 |
 
-## Immediate Queue
+## Gate Outcome
 
-1. `PN001`：新增冻结配置、目录与 provenance 契约。
-2. `PN002`：获取并校验官方 PRM800K 数据。
-3. `PN003`：用小型 fixture 实现解析和官方 grader 接口测试。
-4. `PN010–PN012`：在任何 GPU 工作前完成严格三联数量门。
+- Phase 1严格结构：Clean 45，Noise-1 0，Noise-2 0。
+- Phase 2严格结构：Clean 602，Noise-1 46，Noise-2 0；46条Noise-1最终答案全部错误。
+- 最终严格合格：Clean 537，Noise-1 0，Noise-2 0。
+- 训练与后续评估任务因上游数据门失败而不执行；新设计需重新批准。

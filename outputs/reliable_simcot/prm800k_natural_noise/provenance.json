@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "run_id": "PN001",
+  "status": "PASS",
+  "prm_repo_commit": "7ecc794703b2877f63226f2477a49b34f9b25163",
+  "source_files": [
+    {
+      "path": "work/vendor/prm800k/prm800k/data/phase1_train.jsonl",
+      "sha256": "e9da6a73f827ffb9a8c0dc644c541d34ed76b3d4d1e4896ff5f7b37ddf5ae34d"
+    },
+    {
+      "path": "work/vendor/prm800k/prm800k/data/phase2_train.jsonl",
+      "sha256": "1110237feeb51d1bc200cb37b8f965cfdc1036eac7d506094049366fe7dc1089"
+    },
+    {
+      "path": "work/vendor/prm800k/prm800k/math_splits/train.jsonl",
+      "sha256": "90d96daeac3fe343ebb1e22ce93dd99690f75983e957f88de42f87cffe1e8076"
+    },
+    {
+      "path": "work/vendor/prm800k/prm800k/math_splits/test.jsonl",
+      "sha256": "35dc41080a3680858b27fa7e0533d2d547825316fc5dafe5d316f4ccc5a06132"
+    },
+    {
+      "path": "work/cache/simcot/checkpoint/checkpoint_28",
+      "sha256": "99b3f9183ea2c4eec61b3fe324ac583f6b7e9e97700c15fc0d37b628120b90b4"
+    }
+  ],
+  "selection_domain": "prm800k-natural-noise-v1",
+  "checkpoint_sha256": "99b3f9183ea2c4eec61b3fe324ac583f6b7e9e97700c15fc0d37b628120b90b4",
+  "official_test_opened": false
+}

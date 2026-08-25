@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "run_ids": [
+    "PN001",
+    "PN002",
+    "PN003",
+    "PN010",
+    "PN011",
+    "PN012"
+  ],
+  "status": "INSUFFICIENT_STRICT_TRIPLETS",
+  "prm_repo_commit": "7ecc794703b2877f63226f2477a49b34f9b25163",
+  "raw_lines": 98731,
+  "reconstructed_before_dedup": 547,
+  "structural_exact_five_original_rating_patterns": {
+    "phase1": {
+      "clean": 45
+    },
+    "phase2": {
+      "clean": 602,
+      "noise1": 46
+    }
+  },
+  "wrong_answer_by_structural_pattern": {
+    "phase2": {
+      "clean": 100,
+      "noise1": 46
+    }
+  },
+  "context_eligible_trajectories": 537,
+  "class_counts": {
+    "clean": 537
+  },
+  "strict_triplets": 0,
+  "required_triplets": 512,
+  "eligible_clean_dev_questions": 523,
+  "required_clean_dev_questions": 256,
+  "rejection_counts": {
+    "not_exactly_five_steps": 70464,
+    "human_completion": 4904,
+    "rating_zero": 1819,
+    "initial_screening": 12654,
+    "invalid_rating": 46,
+    "wrong_answer": 146,
+    "quality_control": 8097,
+    "missing_question_fields": 54,
+    "duplicate_annotations_removed": 10
+  },
+  "confirm_examples": 500,
+  "official_test_opened": false
+}
