@@ -1,7 +1,7 @@
-# 强错误—显式自纠—正确答案实验实施计划
+# 错误抵消步骤噪声控制实验实施计划
 
 当前版本化实施计划：
 
-`refine-logs/2026-08-26-self-corrected-strong-conflict-EXPERIMENT_PLAN.md`
+`refine-logs/2026-08-27-error-cancellation-gsm8k-EXPERIMENT_PLAN.md`
 
-执行范围：512 套五联组、九臂三种子共 27 次训练、干净 MATH 500 题评估、oracle 0.1 归一化步骤加权。
+执行范围：GSM8K 512 套五变体、九组第一阶段三种子训练、官方 test 评估、匹配冗余伤害对照，以及伤害门通过后的 oracle 0.1 选择性恢复实验。
