@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 from contextlib import nullcontext
+from fractions import Fraction
 from pathlib import Path
 from statistics import mean, median
 from typing import Any
 import gc
 import json
 import math
+import random
 import time
 
 import torch
 
 from .full_conflict_data import load_frozen_schedule
+from .error_cancellation_data import evaluate_arithmetic, parse_equation
 from .gradient_leverage import _layer_metrics
 from .m1_training import atomic_json, sha256_file
 from .official_adapter import OfficialExample, load_official_model
@@ -26,7 +29,193 @@ MAIN_ARMS = (
     "full_conflict_25",
 )
 CONDITIONAL_ARM = "full_conflict_50"
-ALL_ARMS = MAIN_ARMS + (CONDITIONAL_ARM,)
+STEP_ORDER_REVERSAL_ARM = "reverse_steps_100"
+REDUNDANT_STEPS_50_ARM = "redundant_steps_50"
+STEP_ORDER_REVERSAL_50_ARM = "reverse_steps_50"
+ACCIDENTAL_CORRECT_50_ARM = "accidental_correct_50"
+UNRELATED_ACCIDENTAL_CORRECT_50_ARM = "unrelated_accidental_correct_50"
+ALL_ARMS = MAIN_ARMS + (
+    CONDITIONAL_ARM,
+    STEP_ORDER_REVERSAL_ARM,
+    REDUNDANT_STEPS_50_ARM,
+    STEP_ORDER_REVERSAL_50_ARM,
+    ACCIDENTAL_CORRECT_50_ARM,
+    UNRELATED_ACCIDENTAL_CORRECT_50_ARM,
+)
+
+
+def _append_redundant_identity(step: str) -> str:
+    if not step.startswith("<<") or not step.endswith(">>") or "=" not in step:
+        raise ValueError(f"Cannot add a neutral operation to malformed step: {step}")
+    _, result = step[2:-2].rsplit("=", 1)
+    return f"{step} <<{result}+0={result}>>"
+
+
+def _format_fraction(value: Fraction) -> str:
+    if value.denominator == 1:
+        return str(value.numerator)
+    reduced = value.denominator
+    for factor in (2, 5):
+        while reduced % factor == 0:
+            reduced //= factor
+    if reduced == 1:
+        digits = max(
+            _factor_count(value.denominator, 2),
+            _factor_count(value.denominator, 5),
+        )
+        return f"{float(value):.{digits}f}".rstrip("0").rstrip(".")
+    return f"({value.numerator}/{value.denominator})"
+
+
+def _factor_count(value: int, factor: int) -> int:
+    count = 0
+    while value % factor == 0:
+        value //= factor
+        count += 1
+    return count
+
+
+def accidental_correct_chain(
+    example: OfficialExample, entry: dict[str, Any]
+) -> tuple[str, ...]:
+    """Keep four severe wrong states, then numerically cancel into the true answer.
+
+    The final offset is deliberately unsupported by the problem semantics.  This
+    makes the trajectory answer-correct without repairing its reasoning path.
+    """
+    full_chain = entry.get("full_chain")
+    if full_chain is None or len(full_chain.get("steps", ())) != 5:
+        raise ValueError("Accidental-correct treatment requires a five-step severe chain")
+    severe = tuple(str(step) for step in full_chain["steps"])
+    prior = parse_equation(severe[3])
+    if not prior.is_true:
+        raise ValueError("The fourth severe step must be arithmetically true")
+    answer = evaluate_arithmetic(example.answer.replace(",", ""))
+    offset = answer - prior.result_value
+    prior_text = prior.result_text
+    if offset == 0:
+        expression = f"{prior_text}+1-1"
+    elif offset > 0:
+        expression = f"{prior_text}+{_format_fraction(offset)}"
+    else:
+        expression = f"{prior_text}-{_format_fraction(-offset)}"
+    final = f"<<{expression}={_format_fraction(answer)}>>"
+    parsed_final = parse_equation(final)
+    if not parsed_final.is_true or parsed_final.result_value != answer:
+        raise ValueError("Accidental cancellation did not reach the answer")
+    return severe[:4] + (final,)
+
+
+def attach_unrelated_donors(
+    schedule: dict[str, Any], *, mapping_seed: int
+) -> dict[str, Any]:
+    """Attach a seeded one-to-one donor derangement to the treated half.
+
+    The chosen cyclic shift also forbids equal numeric results between a target's
+    Clean prefix and its donor prefix at all four aligned positions.  Selection
+    depends only on frozen source data, never on model outcomes.
+    """
+    active = [
+        row for row in schedule["train_entries"]
+        if row.get("coverage_tier") in {0, 1}
+    ]
+    ordered = sorted(active, key=lambda row: row["question_id"])
+    random.Random(mapping_seed).shuffle(ordered)
+    clean_values = {
+        row["question_id"]: tuple(
+            parse_equation(step).result_value for step in row["clean_steps"][:4]
+        )
+        for row in ordered
+    }
+    donor_values = {
+        row["question_id"]: tuple(
+            parse_equation(step).result_value
+            for step in row["full_chain"]["steps"][:4]
+        )
+        for row in ordered
+    }
+    candidates: dict[str, list[str]] = {}
+    by_id = {row["question_id"]: row for row in ordered}
+    rng = random.Random(mapping_seed)
+    for target in ordered:
+        target_id = target["question_id"]
+        donor_ids = [
+            donor["question_id"]
+            for donor in ordered
+            if donor["question_id"] != target_id
+            and all(left != right for left, right in zip(
+                clean_values[target_id],
+                donor_values[donor["question_id"]],
+                strict=True,
+            ))
+        ]
+        rng.shuffle(donor_ids)
+        candidates[target_id] = donor_ids
+    target_order = [row["question_id"] for row in ordered]
+    rng.shuffle(target_order)
+    donor_to_target: dict[str, str] = {}
+
+    def assign(target_id: str, seen: set[str]) -> bool:
+        for donor_id in candidates[target_id]:
+            if donor_id in seen:
+                continue
+            seen.add(donor_id)
+            current = donor_to_target.get(donor_id)
+            if current is None or assign(current, seen):
+                donor_to_target[donor_id] = target_id
+                return True
+        return False
+
+    for target_id in target_order:
+        if not assign(target_id, set()):
+            raise ValueError("No one-to-one unrelated donor matching satisfies the prefix constraints")
+    target_to_donor = {target: donor for donor, target in donor_to_target.items()}
+    if len(target_to_donor) != len(ordered):
+        raise ValueError("Unrelated donor matching is incomplete")
+    pairs: list[dict[str, Any]] = []
+    for target in ordered:
+        donor = by_id[target_to_donor[target["question_id"]]]
+        if donor["question_id"] == target["question_id"]:
+            raise ValueError("Unrelated donor mapping contains a fixed point")
+        target["unrelated_donor"] = {
+            "question_id": donor["question_id"],
+            "source_idx": donor["source_idx"],
+            "question": donor["question"],
+            "steps": list(donor["full_chain"]["steps"]),
+        }
+        pairs.append(
+            {
+                "target_question_id": target["question_id"],
+                "donor_question_id": donor["question_id"],
+            }
+        )
+    return {
+        "mapping_seed": mapping_seed,
+        "mapping_method": "seeded_one_to_one_bipartite_derangement",
+        "pairs": sorted(pairs, key=lambda row: row["target_question_id"]),
+    }
+
+
+def unrelated_accidental_correct_chain(
+    example: OfficialExample, entry: dict[str, Any]
+) -> tuple[str, ...]:
+    donor = entry.get("unrelated_donor")
+    if donor is None or len(donor.get("steps", ())) != 5:
+        raise ValueError("Unrelated-correct treatment requires an attached donor chain")
+    donor_steps = tuple(str(step) for step in donor["steps"])
+    prior = parse_equation(donor_steps[3])
+    answer = evaluate_arithmetic(example.answer.replace(",", ""))
+    offset = answer - prior.result_value
+    if offset == 0:
+        expression = f"{prior.result_text}+1-1"
+    elif offset > 0:
+        expression = f"{prior.result_text}+{_format_fraction(offset)}"
+    else:
+        expression = f"{prior.result_text}-{_format_fraction(-offset)}"
+    final = f"<<{expression}={_format_fraction(answer)}>>"
+    if not parse_equation(final).is_true:
+        raise ValueError("Unrelated accidental cancellation is arithmetically false")
+    return donor_steps[:4] + (final,)
 
 
 def arm_targets(
@@ -39,7 +228,36 @@ def arm_targets(
         return clean, 0.0, 0
     if arm == "clean_aux1":
         return clean, 1.0, 0
+    if arm == STEP_ORDER_REVERSAL_ARM:
+        reversed_steps = tuple(reversed(clean))
+        changed_positions = sum(
+            original != reversed_step
+            for original, reversed_step in zip(clean, reversed_steps, strict=True)
+        )
+        return reversed_steps, 1.0, changed_positions
     tier = entry.get("coverage_tier")
+    active_50 = tier in {0, 1}
+    if arm == REDUNDANT_STEPS_50_ARM:
+        if not active_50:
+            return clean, 1.0, 0
+        return tuple(_append_redundant_identity(step) for step in clean), 1.0, len(clean)
+    if arm == STEP_ORDER_REVERSAL_50_ARM:
+        if not active_50:
+            return clean, 1.0, 0
+        reversed_steps = tuple(reversed(clean))
+        changed_positions = sum(
+            original != reversed_step
+            for original, reversed_step in zip(clean, reversed_steps, strict=True)
+        )
+        return reversed_steps, 1.0, changed_positions
+    if arm == ACCIDENTAL_CORRECT_50_ARM:
+        if not active_50:
+            return clean, 1.0, 0
+        return accidental_correct_chain(example, entry), 1.0, 5
+    if arm == UNRELATED_ACCIDENTAL_CORRECT_50_ARM:
+        if not active_50:
+            return clean, 1.0, 0
+        return unrelated_accidental_correct_chain(example, entry), 1.0, 5
     active = tier == 0 or (arm == CONDITIONAL_ARM and tier == 1)
     if not active:
         return clean, 1.0, 0
@@ -100,6 +318,10 @@ def run_full_conflict_training(
     if sha256_file(root / config["checkpoint_path"]) != config["checkpoint_sha256"]:
         raise ValueError("Starting checkpoint SHA-256 mismatch")
     schedule = load_frozen_schedule(config, root)
+    if arm == UNRELATED_ACCIDENTAL_CORRECT_50_ARM:
+        attach_unrelated_donors(
+            schedule, mapping_seed=int(config["unrelated_mapping_seed"])
+        )
     entries = schedule["train_entries"]
     examples = _examples(schedule)
     updates = int(updates_override or config["pilot_updates"])

@@ -122,7 +122,19 @@ def load_official_model(
         local_files_only=True,
     )
     base_model = AutoModelForCausalLM.from_config(model_config)
-    auxiliary_model = AutoModelForCausalLM.from_config(model_config)
+    # The released SIM-CoT training code initializes a newly attached auxiliary
+    # decoder from the pretrained language model.  Full SIM-CoT checkpoints
+    # overwrite every auxiliary weight, so constructing from config is cheaper
+    # there.  A pure Coconut checkpoint has no auxiliary weights, however, and
+    # must take the pretrained initialization to remain faithful to the method.
+    auxiliary_model = (
+        AutoModelForCausalLM.from_pretrained(
+            str(base_model_dir),
+            local_files_only=True,
+        )
+        if allow_missing_auxiliary
+        else AutoModelForCausalLM.from_config(model_config)
+    )
     base_model.resize_token_embeddings(len(tokenizer))
     # Match the official run.py exactly: only the base model receives the
     # three latent-token rows.  The auxiliary decoder stays at GPT-2's

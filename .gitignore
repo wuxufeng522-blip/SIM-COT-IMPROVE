@@ -1,0 +1,24 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+
+# Local upstream mirrors, downloaded datasets, and model caches.
+work/
+
+# Runtime logs, scratch files, and generated experiment artifacts.
+logs/
+tmp/
+outputs/
+
+# Model weights and training checkpoints must stay out of Git.
+*.bin
+*.ckpt
+*.pt
+*.pth
+*.safetensors
+checkpoint*/
+
+# Existing narrowly scoped legacy exclusions.
+outputs/overnight_poc/checkpoints/
+outputs/overnight_poc/cache/
