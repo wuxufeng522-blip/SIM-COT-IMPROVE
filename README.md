@@ -34,14 +34,14 @@
 
 设第 `s` 个步骤的 confidence 为 `c_s`，阈值为 `τ`。训练时采用最直接的阈值门控：
 
-\[
+$$
 w_s=
 \begin{cases}
 1, & c_s\ge \tau,\\
 \beta, & c_s<\tau,
 \end{cases}
 \qquad 0<\beta<1.
-\]
+$$
 
 即：
 
@@ -63,13 +63,13 @@ w_s = β < 1
 
 最终答案损失始终保持正常监督，只调整步骤级辅助损失：
 
-\[
-\mathcal L
+$$
+\mathcal{L}
 =
-\mathcal L_{\text{answer}}
+\mathcal{L}_{\text{answer}}
 +
-\lambda\sum_s w_s\mathcal L_{\text{step},s}.
-\]
+\lambda\sum_s w_s\mathcal{L}_{\text{step},s}.
+$$
 
 ### P4：验证是否提高困难问题准确率并缓解 underthinking
 
@@ -348,13 +348,13 @@ P0 已完成错误步骤伤害验证。下一阶段围绕 P1–P4 验证一个�
 
 对 Teacher 正确轨迹中的第 `s` 个步骤 `S_s`，先使用 Student forward pass 计算 step-wise surprisal：
 
-\[
+$$
 \operatorname{Surp}(S_s)
 =
 -\frac{1}{|\mathcal T_s|}
 \sum_{t\in\mathcal T_s}
 \log p_{\theta}(y_t^T\mid x,y_{<t}^T).
-\]
+$$
 
 其中 `y_t^T` 为 Teacher step token。高 surprisal 表示该步骤对当前 Student 更不熟悉、学习难度更高。
 
@@ -382,9 +382,9 @@ Confidence 的设计参考 **Efficient Reasoning with Balanced Thinking (ReBalan
 
 对于第 `s` 个 reasoning step，直接从 Student 对应隐藏状态 `h_s^{(l)}` 中得到 step-level confidence：
 
-\[
+$$
 c_s = g(h_s^{(l)}),
-\]
+$$
 
 其中 `g(·)` 表示从 hidden state 到 confidence 的读出映射。实现时重点验证：
 
@@ -407,24 +407,24 @@ c_s = g(h_s^{(l)}),
 
 定义：
 
-\[
+$$
 w_s=
 \begin{cases}
 1, & c_s\ge \tau,\\
 \beta, & c_s<\tau.
 \end{cases}
-\]
+$$
 
 训练目标为：
 
-\[
-\mathcal L
+$$
+\mathcal{L}
 =
-\mathcal L_{\text{answer}}
+\mathcal{L}_{\text{answer}}
 +
 \lambda\sum_{s=1}^{S}
-w_s\mathcal L_{\text{step},s}.
-\]
+w_s\mathcal{L}_{\text{step},s}.
+$$
 
 机制非常直接：
 
@@ -458,23 +458,23 @@ P4 的第一优先级是最终答案准确率 / EM。
 
 核心比较：
 
-\[
+$$
 \Delta_{\text{ours}}
 =
 Acc_{\text{Confidence-Threshold}}
 -
 Acc_{\text{Noisy-Equal}}.
-\]
+$$
 
 希望看到：
 
-\[
+$$
 Acc_{\text{Noisy-Equal}}
 <
 Acc_{\text{Confidence-Threshold}}
 \le
 Acc_{\text{Clean}}.
-\]
+$$
 
 如果 confidence 阈值降权主要改善高-surprisal、低-confidence 困难样本，而普通样本基本不退化，就更支持当前机制解释。
 
@@ -549,11 +549,11 @@ confidence < τ 时降权
 
 成功标准首先看：
 
-\[
+$$
 Acc_{\text{Confidence-Threshold}}
 >
 Acc_{\text{Noisy-Equal}}.
-\]
+$$
 
 如果提升主要来自高-surprisal、低-confidence 困难样本，同时 clean / easy 样本没有明显退化，则进一步支持“降低困难区域错误 Teacher 牵引”的机制解释。
 
