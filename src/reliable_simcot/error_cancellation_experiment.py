@@ -387,6 +387,7 @@ def run_training_arm(
         device=device,
         dtype=torch.float32,
         move_auxiliary_to_device=True,
+        allow_missing_auxiliary=bool(config.get("allow_missing_auxiliary", False)),
     )
     model.base_causallm.train()
     model.expainable_llm.train()
@@ -523,6 +524,9 @@ def run_training_arm(
         "manifest_sha256": manifest["manifest_sha256"],
         "schedule_sha256": schedule["schedule_sha256"],
         "starting_checkpoint_sha256": config["checkpoint_sha256"],
+        "starting_checkpoint_missing_auxiliary": bool(
+            config.get("allow_missing_auxiliary", False)
+        ),
         "checkpoint_path": str(saved_path) if saved_path else None,
         "checkpoint_sha256": checkpoint_hash,
     }

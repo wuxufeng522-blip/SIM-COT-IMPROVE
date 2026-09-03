@@ -54,14 +54,18 @@ def write_state(root: Path, config: dict, phase: str, status: str = "RUNNING", *
 
 
 def verify_frozen_inputs(root: Path, config: dict) -> None:
-    for path_key, hash_key in (
+    frozen_pairs = [
         ("checkpoint_path", "checkpoint_sha256"),
         ("gsm_train_path", "gsm_train_sha256"),
         ("gsm_test_path", "gsm_test_sha256"),
         ("manifest_path", "manifest_file_sha256"),
         ("schedule_path", "schedule_file_sha256"),
-        ("clipped_reference_analysis_path", "clipped_reference_analysis_sha256"),
-    ):
+    ]
+    if config.get("clipped_reference_analysis_path") is not None:
+        frozen_pairs.append(
+            ("clipped_reference_analysis_path", "clipped_reference_analysis_sha256")
+        )
+    for path_key, hash_key in frozen_pairs:
         path = root / config[path_key]
         if not path.is_file() or sha256_file(path) != config[hash_key]:
             raise ValueError(f"Frozen artifact missing or changed: {path}")
@@ -143,9 +147,6 @@ def analyze(root: Path, config: dict) -> dict:
         )
         for seed in seeds
     ]
-    clipped = json.loads(
-        (root / config["clipped_reference_analysis_path"]).read_text(encoding="utf-8")
-    )
     comparison = {
         "effect_definition": "EW50_accuracy_minus_C_accuracy",
         "per_seed_pp": dict(zip(map(str, seeds), paired_effects)),
@@ -163,7 +164,18 @@ def analyze(root: Path, config: dict) -> dict:
         "accuracies": accuracies,
         "gradient_norms": gradients,
         "no_clip_error_vs_clean": comparison,
-        "clipped_v13_reference": {
+        "disclosure": config["disclosure"],
+    }
+    base_metrics_path = root / config["base_eval_dir"] / "metrics.json"
+    if base_metrics_path.is_file():
+        result["starting_checkpoint_accuracy"] = float(
+            json.loads(base_metrics_path.read_text(encoding="utf-8"))["accuracy"]
+        )
+    if config.get("clipped_reference_analysis_path") is not None:
+        clipped = json.loads(
+            (root / config["clipped_reference_analysis_path"]).read_text(encoding="utf-8")
+        )
+        result["clipped_reference"] = {
             "C_mean": float(clipped["accuracies"]["C"]["mean"]),
             "EW50_mean": float(clipped["accuracies"]["EW50"]["mean"]),
             "EW50_minus_C_pp": 100.0
@@ -171,9 +183,7 @@ def analyze(root: Path, config: dict) -> dict:
                 float(clipped["accuracies"]["EW50"]["mean"])
                 - float(clipped["accuracies"]["C"]["mean"])
             ),
-        },
-        "disclosure": config["disclosure"],
-    }
+        }
     atomic_json(root / config["analysis_path"], result)
     return result
 
@@ -182,9 +192,8 @@ def write_report(root: Path, config: dict, analysis: dict) -> None:
     clean = analysis["accuracies"]["C"]
     error = analysis["accuracies"]["EW50"]
     effect = analysis["no_clip_error_vs_clean"]
-    clipped = analysis["clipped_v13_reference"]
     lines = [
-        "# GSM8K v23 关闭梯度裁剪小样本错误步骤试跑",
+        f"# {config.get('report_title', 'GSM8K 关闭梯度裁剪小样本错误步骤试跑')}",
         "",
         "本实验复用 v13 的 Codex 受控半合成严重单边冲突，不是自然教师噪声；最终答案标签保持正确。",
         "",
@@ -194,9 +203,17 @@ def write_report(root: Path, config: dict, analysis: dict) -> None:
         f"| EW50：50%严重宽错误链 | {100*error['mean']:.2f}% | {100*error['population_sd']:.2f} pp |",
         "",
         f"关闭裁剪后 EW50−C：{effect['mean_effect_pp']:.2f} pp。",
-        f"已有 v13 裁剪=1.0 时 EW50−C：{clipped['EW50_minus_C_pp']:.2f} pp。",
         f"达到至少2 pp伤害：{'是' if effect['harm_at_least_2pp'] else '否'}；达到至少5 pp伤害：{'是' if effect['harm_at_least_5pp'] else '否'}。",
     ]
+    if "starting_checkpoint_accuracy" in analysis:
+        lines.append(
+            f"训练起点准确率：{100*analysis['starting_checkpoint_accuracy']:.2f}%。"
+        )
+    if "clipped_reference" in analysis:
+        lines.append(
+            "已有裁剪=1.0对照中的 EW50−C："
+            f"{analysis['clipped_reference']['EW50_minus_C_pp']:.2f} pp。"
+        )
     report_path = root / config["report_path"]
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
