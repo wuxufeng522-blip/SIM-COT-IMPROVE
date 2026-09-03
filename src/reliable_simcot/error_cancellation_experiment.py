@@ -281,6 +281,30 @@ def weighted_step_mean(step_losses: torch.Tensor, weights: torch.Tensor) -> torc
     return torch.dot(step_losses, weights) / step_losses.numel()
 
 
+def measure_or_clip_gradient_norm(
+    parameters: Iterable[torch.nn.Parameter], max_grad_norm: float | None
+) -> torch.Tensor:
+    """Return the global L2 gradient norm, clipping only when requested."""
+    parameters = tuple(parameters)
+    if max_grad_norm is not None:
+        threshold = float(max_grad_norm)
+        if not math.isfinite(threshold) or threshold <= 0:
+            raise ValueError("max_grad_norm must be null or a finite positive number")
+        return torch.nn.utils.clip_grad_norm_(parameters, threshold)
+
+    gradients = [
+        parameter.grad.detach().float()
+        for parameter in parameters
+        if parameter.grad is not None
+    ]
+    if not gradients:
+        return torch.tensor(0.0)
+    component_norms = torch.stack(
+        [torch.linalg.vector_norm(gradient, ord=2) for gradient in gradients]
+    )
+    return torch.linalg.vector_norm(component_norms, ord=2)
+
+
 def _autocast(device: torch.device, precision: str):
     if precision == "fp32":
         return nullcontext()
@@ -432,8 +456,8 @@ def run_training_arm(
             scaled.backward()
             micro_values.append(values)
             del scaled, objective, losses, batch, targets
-        norm = torch.nn.utils.clip_grad_norm_(
-            model.parameters(), float(config["max_grad_norm"])
+        norm = measure_or_clip_gradient_norm(
+            model.parameters(), config.get("max_grad_norm")
         )
         if not torch.isfinite(norm):
             raise FloatingPointError(f"Non-finite gradient norm in {arm}")
@@ -454,6 +478,8 @@ def run_training_arm(
                 "latest_total_loss": totals[-1],
                 "latest_answer_loss": answers[-1],
                 "latest_auxiliary_loss": auxiliaries[-1],
+                "gradient_clipping_enabled": config.get("max_grad_norm") is not None,
+                "max_grad_norm": config.get("max_grad_norm"),
                 "peak_reserved_gb": torch.cuda.max_memory_reserved(device) / 1024**3,
                 "schedule_sha256": schedule["schedule_sha256"],
             }
@@ -488,6 +514,9 @@ def run_training_arm(
         "update_answer_losses": answers,
         "update_auxiliary_losses": auxiliaries,
         "preclip_gradient_norms": gradients,
+        "gradient_clipping_enabled": config.get("max_grad_norm") is not None,
+        "max_grad_norm": config.get("max_grad_norm"),
+        "gradient_norm_semantics": "global_l2_before_optimizer_step",
         "elapsed_seconds": elapsed,
         "peak_reserved_gb": peak,
         "memory_limit_gb": float(config["max_reserved_memory_gb"]),

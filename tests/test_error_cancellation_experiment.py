@@ -3,6 +3,7 @@ import torch
 from reliable_simcot.error_cancellation_experiment import (
     STAGE1_ARMS,
     create_training_schedule,
+    measure_or_clip_gradient_norm,
     variant_and_weights,
     weighted_step_mean,
 )
@@ -73,3 +74,19 @@ def test_schedule_is_deterministic_and_shared_across_arms() -> None:
     second = create_training_schedule(manifest, seeds=[1], updates=2, accumulation=2)
     assert first == second
     assert len(first["per_seed"]["1"]) == 4
+
+
+def test_null_gradient_limit_measures_without_clipping() -> None:
+    parameter = torch.nn.Parameter(torch.tensor([3.0, 4.0]))
+    parameter.grad = torch.tensor([3.0, 4.0])
+    norm = measure_or_clip_gradient_norm([parameter], None)
+    assert norm.item() == 5.0
+    assert torch.equal(parameter.grad, torch.tensor([3.0, 4.0]))
+
+
+def test_positive_gradient_limit_still_clips() -> None:
+    parameter = torch.nn.Parameter(torch.tensor([3.0, 4.0]))
+    parameter.grad = torch.tensor([3.0, 4.0])
+    norm = measure_or_clip_gradient_norm([parameter], 1.0)
+    assert norm.item() == 5.0
+    assert torch.linalg.vector_norm(parameter.grad).item() < 1.000001
