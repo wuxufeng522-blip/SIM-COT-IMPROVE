@@ -1,7 +1,9 @@
 # SIM-COT-IMPROVE：实验路线、结果与代码索引
 
-> 更新日期：2026-09-03  
-> 当前分支：`codex/rsr-rd-poc-design`  
+> 更新日期：2026-09-03
+>
+> 当前分支：`codex/rsr-rd-poc-design`
+>
 > 本文性质：内部实验总览和可追溯索引，不是独立第三方完整性审计。
 
 ## 1. 项目在研究什么
@@ -393,4 +395,3 @@ $env:PYTHONPATH = "src"
 - 不可以把 `79.82%` 写成官方 GSM8K test baseline。
 - 不可以把第三方 Coconut checkpoint-33 写成作者 checkpoint-24。
 - 不可以把当前实验写成 CODI + SIM-CoT；该路线尚未完成。
-
